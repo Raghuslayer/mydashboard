@@ -1,0 +1,1468 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Raghu Prime Dashboard</title>
+    <!-- Tailwind CSS for utility classes --> 
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts for custom typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;700&family=Teko:wght@700&display=swap" rel="stylesheet">
+    <!-- Font Awesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        /* Define custom fiery color variables */
+        :root {
+            --fire-red: #ff2a00;
+            --fire-orange: #ff5e00;
+            --fire-yellow: #ff9d00;
+            --cool-gray-200: #e5e7eb;
+            --fire-gradient: linear-gradient(90deg, var(--fire-red), var(--fire-orange), var(--fire-yellow));
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            color: var(--cool-gray-200);
+            overflow-x: hidden;
+            background-color: #000;
+            min-height: 100vh;
+        }
+
+        /* Dashboard Background Container for Video */
+        .dashboard-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1; /* Ensures it's behind the main content */
+            overflow: hidden;
+        }
+
+        /* Styling for the background video */
+        .background-video {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            min-width: 100%;
+            min-height: 100%;
+            width: auto;
+            height: auto;
+            z-index: -2; /* Ensures video is behind the overlay and content */
+            transform: translate(-50%, -50%);
+            object-fit: cover; /* Ensures the video covers the entire area without distortion */
+        }
+
+        /* Overlay for blur and brightness effect on the video */
+        .video-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.4); /* Darken overlay to make text more readable */
+            backdrop-filter: blur(3px); /* Apply blur to the area above the video */
+            -webkit-backdrop-filter: blur(5px); /* For Safari compatibility */
+            z-index: -1; /* Above the video, below content */
+        }
+
+        /* Motivational Header Style */
+        .header-text {
+            font-family: 'Teko', sans-serif;
+            letter-spacing: 0.1em;
+            text-shadow: 0 0 10px var(--fire-red), 0 0 20px var(--fire-orange);
+            background: var(--fire-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* Tab Styles */
+        .tab {
+            position: relative;
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.25rem;
+            letter-spacing: 0.05em;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            text-shadow: 0 0 5px rgba(255, 255, 255, 0.2);
+            position: relative;
+        }
+
+        .tab:hover {
+            color: var(--fire-yellow);
+            border-bottom-color: var(--fire-orange);
+            transform: translateY(-2px);
+            text-shadow: 0 0 15px var(--fire-yellow);
+        }
+
+        .tab.active {
+            color: var(--fire-yellow);
+            border-bottom-color: var(--fire-red);
+            font-weight: 700;
+            text-shadow: 0 0 15px var(--fire-red), 0 0 20px var(--fire-orange);
+            transform: translateY(0);
+        }
+
+        /* Progress indicator dot */
+        .tab .progress-dot {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            width: 8px;
+            height: 8px;
+            background-color: #ff9d00;
+            border-radius: 50%;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            box-shadow: 0 0 5px #ff9d00;
+        }
+
+        .tab.progress .progress-dot {
+            opacity: 1;
+            animation: pulse-orange 1.5s infinite;
+        }
+        
+        @keyframes pulse-orange {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.5); opacity: 0.8; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        /* Content Area Animations */
+        .content-container {
+            transition: opacity 0.5s ease-in-out;
+        }
+
+        .fade-out {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .fade-in {
+            opacity: 1;
+        }
+
+        /* Premium Tile Styling */
+        .tile {
+            position: relative;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-radius: 1.5rem;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease, opacity 0.5s ease;
+        }
+
+        .tile:hover {
+            transform: translateY(-5px) scale(1.02);
+            box-shadow: 0 8px 40px rgba(255, 42, 0, 0.2), 0 0 20px rgba(255, 94, 0, 0.1);
+        }
+        
+        /* Keyframe animation for the new green glow effect */
+        @keyframes greenGlow {
+            0% { box-shadow: 0 0 5px #00ff00; }
+            50% { box-shadow: 0 0 20px #00ff00, 0 0 40px rgba(0, 255, 0, 0.5); }
+            100% { box-shadow: 0 0 5px #00ff00; }
+        }
+
+        .tile.checked {
+            animation: greenGlow 1.5s infinite alternate ease-in-out;
+            transform: scale(1.03); /* Subtle scale up for emphasis */
+            border-color: #00ff00; /* Green border to match the glow */
+        }
+        
+        /* The new CSS to hide the scrollbar from the tabs navigation */
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+
+        .hide-scrollbar {
+            -ms-overflow-style: none; /* IE and Edge */
+            scrollbar-width: none;  /* Firefox */
+        }
+
+        /* Progress Bar Styles */
+        .progress-bar-container {
+            width: 100%;
+            background-color: rgba(0, 0, 0, 0.3);
+            border-radius: 9999px;
+            overflow: hidden;
+            margin-top: 1rem;
+            height: 10px;
+        }
+
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            background: var(--fire-gradient);
+            border-radius: 9999px;
+            transition: width 0.5s ease-in-out;
+        }
+
+        /* Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(5px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+            z-index: 1000;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal-content {
+            background: rgba(18, 18, 18, 0.9);
+            border-radius: 1.5rem;
+            padding: 2rem;
+            width: 90%;
+            max-width: 800px;
+            position: relative;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transform: scale(0.9);
+            transition: transform 0.3s ease;
+            max-height: 90vh; /* Add max height to modal content */
+            overflow-y: auto; /* Allow scrolling if content overflows */
+        }
+
+        .modal-overlay.active .modal-content {
+            transform: scale(1);
+        }
+
+        .close-button {
+            position: absolute;
+            top: 1rem;
+            right: 1.5rem;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--cool-gray-200);
+            transition: color 0.2s ease;
+        }
+
+        .close-button:hover {
+            color: var(--fire-red);
+        }
+
+        /* New responsive aspect ratio for videos */
+        .aspect-9-16 {
+            aspect-ratio: 9 / 16;
+        }
+
+        /* Context Menu Styles */
+        .context-menu {
+            position: absolute;
+            background-color: rgba(30, 30, 30, 0.95);
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            z-index: 1100; /* Above modal overlay */
+            padding: 0.5rem 0;
+            min-width: 150px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            opacity: 0;
+            visibility: hidden;
+            transform: scale(0.95);
+            transition: opacity 0.1s ease, visibility 0.1s ease, transform 0.1s ease;
+        }
+
+        .context-menu.active {
+            opacity: 1;
+            visibility: visible;
+            transform: scale(1);
+        }
+
+        .context-menu-item {
+            padding: 0.6rem 1rem;
+            color: var(--cool-gray-200);
+            cursor: pointer;
+            transition: background-color 0.2s ease, color 0.2s ease;
+            font-size: 0.9rem;
+        }
+
+        .context-menu-item:hover {
+            background-color: rgba(255, 42, 0, 0.2);
+            color: var(--fire-yellow);
+        }
+
+        .loading-spinner {
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-top: 4px solid var(--fire-yellow);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Login/Signup Page Styles */
+        .auth-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            backdrop-filter: blur(10px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000; /* Above everything else */
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.5s ease, visibility 0.5s ease;
+        }
+
+        .auth-container.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .auth-form {
+            background: rgba(18, 18, 18, 0.95);
+            border-radius: 1.5rem;
+            padding: 2.5rem;
+            width: 90%;
+            max-width: 450px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 8px 40px rgba(255, 42, 0, 0.2);
+            text-align: center;
+            transform: translateY(20px);
+            transition: transform 0.5s ease;
+        }
+
+        .auth-container.active .auth-form {
+            transform: translateY(0);
+        }
+
+        .auth-form input {
+            background-color: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: var(--cool-gray-200);
+            border-radius: 0.75rem;
+            padding: 0.75rem 1rem;
+            width: 100%;
+            margin-bottom: 1rem;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .auth-form input:focus {
+            outline: none;
+            border-color: var(--fire-orange);
+            box-shadow: 0 0 0 3px rgba(255, 94, 0, 0.3);
+        }
+
+        .auth-form button {
+            background: var(--fire-gradient);
+            color: #fff;
+            font-family: 'Bebas Neue', sans-serif;
+            letter-spacing: 0.05em;
+            padding: 0.8rem 1.5rem;
+            border-radius: 0.75rem;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: transform 0.3s ease, opacity 0.3s ease, box-shadow 0.3s ease;
+            box-shadow: 0 4px 15px rgba(255, 42, 0, 0.3);
+            width: 100%;
+        }
+
+        .auth-form button:hover {
+            transform: translateY(-2px);
+            opacity: 0.9;
+            box-shadow: 0 6px 20px rgba(255, 42, 0, 0.4);
+        }
+
+        .auth-form .toggle-auth {
+            color: var(--fire-yellow);
+            cursor: pointer;
+            text-decoration: underline;
+            margin-top: 1rem;
+            font-size: 0.9rem;
+            transition: color 0.2s ease;
+        }
+
+        .auth-form .toggle-auth:hover {
+            color: var(--fire-orange);
+        }
+
+        .auth-message {
+            color: var(--fire-red);
+            margin-bottom: 1rem;
+            font-size: 0.9rem;
+            min-height: 20px; /* Reserve space to prevent layout shift */
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center p-4 sm:p-8 text-white">
+
+    <div class="dashboard-bg">
+        <!-- Video element for the background -->
+        <video autoplay loop muted playsinline class="background-video">
+            <!-- Your Cloudinary video URL (direct .mp4 or .webm link) -->
+            <source src="https://res.cloudinary.com/dpragculd/video/upload/f_auto,q_auto/Untitled_video_-_Made_with_Clipchamp_2_ksnfci.mp4" type="video/mp4">
+            Your browser does not support the video tag.
+        </video>
+        <!-- Overlay for blur and darkening effect -->
+        <div class="video-overlay"></div>
+    </div>
+
+    <!-- Login/Signup Page -->
+    <div id="auth-container" class="auth-container">
+        <div class="auth-form">
+            <h2 id="auth-title" class="header-text text-4xl sm:text-5xl font-extrabold mb-6">Login</h2>
+            <p id="auth-message" class="auth-message"></p>
+            <input type="email" id="auth-email" placeholder="Email" class="mb-4">
+            <input type="password" id="auth-password" placeholder="Password">
+            <button id="auth-submit-button" class="mb-4">Login</button>
+            <p class="toggle-auth" id="toggle-auth-mode">Don't have an account? Sign Up</p>
+        </div>
+    </div>
+
+    <!-- Main Dashboard Content (hidden until authenticated) -->
+    <div id="main-dashboard" class="w-full flex flex-col items-center" style="display: none;">
+        <header class="w-full max-w-6xl flex flex-col md:flex-row items-center justify-between p-4 sm:p-6 mb-8 rounded-2xl bg-black bg-opacity-40 backdrop-blur-md">
+            <div class="flex flex-col items-center md:items-start w-full md:w-auto">
+                <h1 class="header-text text-4xl sm:text-5xl md:text-6xl font-extrabold mb-2 md:mb-4 text-center md:text-left">RAGHU PRIME DASHBOARD</h1>
+                <div class="flex items-center space-x-4 w-full justify-center md:justify-start">
+                    <div class="progress-bar-container w-4/5 md:w-3/4">
+                        <div class="progress-bar" id="progressBar"></div>
+                    </div>
+                    <button id="resetButton" class="bg-red-600 hover:bg-red-700 text-white font-bold py-1 px-3 rounded-full text-sm transition-all duration-300 transform hover:scale-105">
+                        <i class="fa-solid fa-arrows-rotate mr-1"></i> Reset Today
+                    </button>
+                </div>
+            </div>
+            <div class="text-center md:text-right mt-4 md:mt-0">
+                <p class="uppercase text-xs sm:text-sm opacity-60">Daily Focus</p>
+                <p id="goal-text" class="text-2xl sm:text-3xl md:text-4xl font-bold font-['Teko'] header-text">UNLEASH YOUR INNER FIRE</p>
+            </div>
+            <button id="logoutButton" class="bg-gray-700 hover:bg-gray-800 text-white font-bold py-2 px-4 rounded-full text-sm transition-all duration-300 transform hover:scale-105 mt-4 md:mt-0 md:ml-4">
+                Logout
+            </button>
+        </header>
+
+        <!-- Updated Navigation Section -->
+        <nav class="w-full max-w-6xl overflow-x-auto p-2 mb-8 bg-black bg-opacity-40 rounded-full backdrop-blur-md hide-scrollbar">
+            <div class="flex flex-nowrap space-x-2 md:space-x-4">
+                <button class="tab px-4 py-2 whitespace-nowrap active" data-tab="morning">Morning Routine <span class="progress-dot"></span></button>
+                <button class="tab px-4 py-2 whitespace-nowrap" data-tab="polaris">Polaris Routine <span class="progress-dot"></span></button>
+                <button class="tab px-4 py-2 whitespace-nowrap" data-tab="evening">Evening Routine <span class="progress-dot"></span></button>
+                <button class="tab px-4 py-2 whitespace-nowrap" data-tab="vault">Adrenaline Vault</button>
+                <button class="tab px-4 py-2 whitespace-nowrap" data-tab="lesson">Life Lesson</button>
+                <button class="tab px-4 py-2 whitespace-nowrap" data-tab="quote">Quote of the Day</button>
+                <button class="tab px-4 py-2 whitespace-nowrap" data-tab="commitments">My Commitments <span class="progress-dot"></span></button>
+                <button class="tab px-4 py-2 whitespace-nowrap" data-tab="goal">My Goal</button>
+                <button class="tab px-4 py-2 whitespace-nowrap" data-tab="neverDo">Never Do List <span class="progress-dot"></span></button>
+                <button class="tab px-4 py-2 whitespace-nowrap" data-tab="mustDo">Must Do List <span class="progress-dot"></span></button>
+            </div>
+        </nav>
+        <!--------------------------------->
+
+        <main id="content-container" class="w-full max-w-6xl content-container grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 fade-in">
+        </main>
+    </div>
+    
+    <!-- Modal for Detailed Content -->
+    <div id="modal-overlay" class="modal-overlay">
+        <div id="modal-content" class="modal-content">
+            <button class="close-button" id="close-modal">&times;</button>
+            <div id="modal-body" class="modal-body text-center">
+                <!-- Content will be injected here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Context Menu for Right-Click (kept for potential future use or other tiles, but not used for pre/post-workout now) -->
+    <div id="context-menu" class="context-menu hidden"></div>
+
+    <!-- Audio Elements for Sound Effects -->
+    <audio id="tabClickSound" src="https://res.cloudinary.com/dpragculd/video/upload/v1754492380/whoosh-end-384629_m7qpm3.mp4" preload="auto"></audio>
+    <audio id="taskCheckSound" src="https://res.cloudinary.com/dpragculd/video/upload/v1754493742/Sword_Sound_Effect_Sword_Slash_Sound_Effect_Knife_Slash_Sound_Effect_Blade_Sound_Effect_rbhoss_mp3cut.net_x93miz.mp3" preload="auto"></audio>
+
+    <!-- Firebase SDKs -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc, collection } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Your web app's Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyBYzwpLGTdl6DVhU8HYrNqNoCREq7Bb9gk",
+            authDomain: "my-dashboard-22c9d.firebaseapp.com",
+            projectId: "my-dashboard-22c9d",
+            storageBucket: "my-dashboard-22c9d.firebasestorage.app",
+            messagingSenderId: "849641787054",
+            appId: "1:849641787054:web:e2d3a6d49022c5859ca73f"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        // Global variables for Canvas environment
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        let userId = null; // Will be set after authentication
+
+        // --- Firebase Authentication Elements ---
+        const authContainer = document.getElementById('auth-container');
+        const mainDashboard = document.getElementById('main-dashboard');
+        const authTitle = document.getElementById('auth-title');
+        const authMessage = document.getElementById('auth-message');
+        const authEmailInput = document.getElementById('auth-email');
+        const authPasswordInput = document.getElementById('auth-password');
+        const authSubmitButton = document.getElementById('auth-submit-button');
+        const toggleAuthModeButton = document.getElementById('toggle-auth-mode');
+        const logoutButton = document.getElementById('logoutButton');
+
+        let isLoginMode = true; // true for login, false for signup
+
+        // Toggle between Login and Signup forms
+        toggleAuthModeButton.addEventListener('click', () => {
+            isLoginMode = !isLoginMode;
+            authTitle.textContent = isLoginMode ? 'Login' : 'Sign Up';
+            authSubmitButton.textContent = isLoginMode ? 'Login' : 'Sign Up';
+            toggleAuthModeButton.textContent = isLoginMode ? "Don't have an account? Sign Up" : "Already have an account? Login";
+            authMessage.textContent = ''; // Clear previous messages
+        });
+
+        // Handle Login/Signup submission
+        authSubmitButton.addEventListener('click', async () => {
+            const email = authEmailInput.value;
+            const password = authPasswordInput.value;
+            authMessage.textContent = ''; // Clear previous messages
+
+            if (!email || !password) {
+                authMessage.textContent = 'Please enter both email and password.';
+                return;
+            }
+
+            try {
+                if (isLoginMode) {
+                    await signInWithEmailAndPassword(auth, email, password);
+                } else {
+                    await createUserWithEmailAndPassword(auth, email, password);
+                }
+            } catch (error) {
+                console.error("Auth error:", error);
+                authMessage.textContent = error.message.includes('auth/email-already-in-use') ? 'Email already in use.' :
+                                          error.message.includes('auth/invalid-email') ? 'Invalid email format.' :
+                                          error.message.includes('auth/weak-password') ? 'Password should be at least 6 characters.' :
+                                          error.message.includes('auth/user-not-found') || error.message.includes('auth/wrong-password') ? 'Invalid email or password.' :
+                                          'Authentication failed. Please try again.';
+            }
+        });
+
+        // Handle Logout
+        logoutButton.addEventListener('click', async () => {
+            try {
+                await signOut(auth);
+                // onAuthStateChanged will handle UI update
+            } catch (error) {
+                console.error("Logout error:", error);
+            }
+        });
+
+        // Listen for authentication state changes
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                userId = user.uid;
+                authContainer.classList.remove('active');
+                mainDashboard.style.display = 'flex';
+                // Initialize dashboard features after successful login
+                await initializeDashboard();
+            } else {
+                userId = null;
+                mainDashboard.style.display = 'none';
+                authContainer.classList.add('active');
+                // Only attempt custom token sign-in if provided, otherwise show login
+                if (initialAuthToken) {
+                    try {
+                        await signInWithCustomToken(auth, initialAuthToken);
+                    } catch (error) {
+                        console.error("Custom token sign-in error:", error);
+                        authMessage.textContent = "Authentication failed. This might be due to an invalid custom token. Please log in or sign up.";
+                        authContainer.classList.add('active'); // Ensure login form is visible
+                        mainDashboard.style.display = 'none';
+                    }
+                } else {
+                    // If no initialAuthToken, ensure auth container is active initially
+                    authContainer.classList.add('active');
+                    mainDashboard.style.display = 'none';
+                }
+            }
+        });
+
+        // Attempt to sign in with custom token if provided (Canvas environment)
+        if (initialAuthToken) {
+            try {
+                await signInWithCustomToken(auth, initialAuthToken);
+            } catch (error) {
+                console.error("Custom token sign-in error:", error);
+                authMessage.textContent = "Authentication failed. This might be due to an invalid custom token. Please log in or sign up.";
+                authContainer.classList.add('active'); // Ensure login form is visible
+                mainDashboard.style.display = 'none';
+            }
+        } else {
+             // If no initialAuthToken, ensure auth container is active initially
+             authContainer.classList.add('active');
+             mainDashboard.style.display = 'none';
+        }
+
+        // Data for each tab
+        const tabContent = {
+            morning: [
+                { title: 'Wake up at 5 AM', description: 'Kickstart your day early.', thumbnail: 'https://placehold.co/600x400/121212/ff5e00?text=WAKE+UP' },
+                { title: 'Gratitude & Goal Reaffirmation', description: '5 min of mental preparation.', thumbnail: 'https://placehold.co/600x400/121212/ff9d00?text=GRATITUDE', videoUrl: 'https://player.cloudinary.com/embed/?cloud_name=dpragculd&public_id=Are_you_agree_with_it_Selfimprovement_motivation_reel_viral_trending_inspirational_yamcjp&profile=cld-default' },
+                { title: 'Water + Pre-Workout Nutrition', description: 'Fuel your body right (5 min).', thumbnail: 'https://placehold.co/600x400/121212/ff2a00?text=PRE-WORKOUT', contextItems: ['Black coffee', 'Almonds', 'Walnuts', 'Raisins', 'Turmeric and neem capsules'] },
+                { title: 'Workout', description: '30-45 min of high-impact exercise.', thumbnail: 'https://placehold.co/600x400/121212/ff5e00?text=WORKOUT' },
+                { title: 'Cold Shower', description: 'Boost alertness and recovery.', thumbnail: 'https://placehold.co/600x400/121212/ff9d00?text=COLD+SHOWER' },
+                { title: 'Yoga + Pranayama', description: '15 min for flexibility and breath control.', thumbnail: 'https://placehold.co/600x400/121212/ff2a00?text=YOGA' },
+                { title: 'Meditation + Om Chanting', description: '15-20 min for mental peace.', thumbnail: 'https://placehold.co/600x400/121212/ff5e00?text=MEDITATION' },
+                { title: 'Visualization + Affirmations', description: '10 min to envision success.', thumbnail: 'https://placehold.co/600x400/121212/ff9d00?text=VISUALIZATION' },
+                { title: 'Personal Rules Review', description: '5 min to align with your principles.', thumbnail: 'https://placehold.co/600x400/121212/ff2a00?text=RULES+REVIEW' },
+                { title: 'Bhagavad Gita Reading', description: '2 pages / 10 min for spiritual growth.', thumbnail: 'https://placehold.co/600x400/121212/ff5e00?text=BHAGAVAD+GITA' },
+                { title: 'Post-Workout Meal', description: '15 min to refuel.', thumbnail: 'https://placehold.co/600x400/121212/ff9d00?text=POST-WORKOUT', contextItems: ['Whey protein', '2 eggs', 'Pumpkin seeds', 'Green gram and menthulu (all soaked)', 'Groundnuts (all soaked)'] },
+                { title: 'Coding (Deep Focus)', description: '1 hr dedicated coding session.', thumbnail: 'https://placehold.co/600x400/121212/ff2a00?text=DEEP+CODING' },
+                { title: 'Polaris Prep', description: '15 min to plan your main tasks.', thumbnail: 'https://placehold.co/600x400/121212/ff5e00?text=POLARIS+PREP' },
+            ],
+            polaris: [
+                { title: 'Classes', description: 'Full focus, diligent note-taking.', thumbnail: 'https://placehold.co/600x400/121212/ff9d00?text=CLASSES' },
+                { title: 'Lunch + Short Walk', description: '1.5 hr break for rejuvenation.', thumbnail: 'https://placehold.co/600x400/121212/ff2a00?text=LUNCH+WALK' },
+                { title: 'Problem Solving', description: 'Solve 3 challenging problems.', thumbnail: 'https://placehold.co/600x400/121212/ff5e00?text=PROBLEM+SOLVING' },
+                { title: 'LR/Aptitude Practice', description: '10-20 min of logical reasoning and aptitude.', thumbnail: 'https://placehold.co/600x400/121212/ff9d00?text=LR/APTITUDE' },
+                { title: 'Logic Puzzles / Riddles / Sudoku', description: '10-15 min for mental agility.', thumbnail: 'https://placehold.co/600x400/121212/ff2a00?text=LOGIC+PUZZLES' },
+                { title: 'Extra Coding Concept or Project Push', description: '30-60 min dedicated coding.', thumbnail: 'https://placehold.co/600x400/121212/ff5e00?text=CODING+PUSH' },
+            ],
+            evening: [
+                { title: 'Freshen Up', description: '10 min to refresh.', thumbnail: 'https://placehold.co/600x400/121212/ff5e00?text=FRESHEN+UP' },
+                { title: 'Class Revision', description: '30 min to review daily lessons.', thumbnail: 'https://placehold.co/600x400/121212/ff9d00?text=CLASS+REVISION' },
+                { title: 'Project / Coding Practice (Portfolio)', description: '1 hr for personal projects.', thumbnail: 'https://placehold.co/600x400/121212/ff2a00?text=PROJECT+PRACTICE' },
+                { title: 'Dinner', description: '15-20 min mindful eating.', thumbnail: 'https://placehold.co/600x400/121212/ff5e00?text=DINNER' },
+                { title: 'Startup Case Study / n8n Tools / Video Editing', description: 'Rotate this 1 hr activity daily.', thumbnail: 'https://placehold.co/600x400/121212/ff9d00?text=SKILL+DEVELOPMENT' },
+                { title: 'Read Failure/Success Stories', description: 'Learn from business case studies.', thumbnail: 'https://placehold.co/600x400/121212/ff2a00?text=BUSINESS+STORIES' }, // New task added here
+                { title: 'Journaling + Tomorrow’s Tasks', description: '15 min reflection and planning.', thumbnail: 'https://placehold.co/600x400/121212/ff2a00?text=JOURNALING' },
+                { title: 'Light Reading', description: '20-30 min of books on mindset/skills.', thumbnail: 'https://placehold.co/600x400/121212/ff5e00?text=READING' },
+                { title: 'Ashwagandha + Magnesium Glycinate', description: '5 min for supplements.', thumbnail: 'https://placehold.co/600x400/121212/ff9d00?text=SUPPLEMENTS' },
+                { title: 'Yoga Nidra', description: '10-15 min for deep relaxation.', thumbnail: 'https://placehold.co/600x400/121212/ff2a00?text=YOGA+NIDRA' },
+                { title: 'Sleep', description: 'Target 6 hrs 45 min of quality sleep.', thumbnail: 'https://placehold.co/600x400/121212/ff5e00?text=SLEEP+TARGET' },
+            ],
+            vault: [
+                { title: 'Promise Yourself Today', description: 'No one will dare to judge you.', videoUrl: 'https://res.cloudinary.com/dpragculd/video/upload/v1754490935/Promise_yourself_today_1_year_from_now_no_one_will_dare_to_judge_you._You_ll_be_unstoppable._skiw5r.mp4' },
+                { title: 'Change Your Family Lifestyle', description: 'Be the one to make a difference.', videoUrl: 'https://res.cloudinary.com/dpragculd/video/upload/v1754490934/Prathi_Family_lo_okadu_untadu_Family_lifestyle_ne_change_chesthadu_Adhi_Nuvve_ayyi_undalii_C_wlqozt.mp4' },
+                { title: 'Wait for it...', description: 'A powerful message.', videoUrl: 'https://res.cloudinary.com/dpragculd/video/upload/v1754490933/Wait_for_it_......_krishna_radha_radheradhe_indimation_rfgfhp.mp4' },
+                { title: 'Motivational Speech', description: 'Inspiring words to keep you going.', videoUrl: 'https://res.cloudinary.com/dpragculd/video/upload/v1754490933/Motivational_speech_....Please_share_re_and_comment_and_like_%EF%B8%8F_please_...._style_tikt_xnswmi.mp3' },
+                { title: 'Unstoppable Drive', description: 'Pushing through limits.', videoUrl: 'https://res.cloudinary.com/dpragculd/video/upload/v1754490932/AQPVmPOe3BKEvcJeIBd0JzRQRxV8VwYIKBgh7SZhnU---8O8egQOP9vGUZjnq9iSKDQ8S5jrXaxg7JD0BIB3F875JdnPMqeQ_kvgpr5.mp4' },
+                { title: 'Story Promotion', description: 'Credit to the respected owner.', videoUrl: 'https://res.cloudinary.com/dpragculd/video/upload/v1754490932/Dm_for_Story_promotion_50Vedio_credit_goes_to_respected_owner_DM_for_credit-Removal_No_copyrig_lfyolv.mp4' },
+                { title: 'Building a New Version', description: 'Destroying myself to build a new version.', videoUrl: 'https://res.cloudinary.com/dpragculd/video/upload/v1754490931/Destroying_myself_to_build_a_new_version_...Follow_thecapguy_19_..._comeback_Youvsyou_gym_whdczc.mp4' },
+            ],
+            lesson: [
+                { title: 'Loading Life Lesson...', description: 'Please wait while we fetch a new life lesson for you.', type: 'loading' },
+            ],
+            quote: [
+                { title: 'Loading Quote...', description: 'Please wait while we fetch the quote of the day.', type: 'loading' },
+            ],
+            commitments: [
+                { title: 'Do it now, not later.', description: 'Take immediate action on tasks.', thumbnail: 'https://placehold.co/600x400/121212/ff2a00?text=DO+IT+NOW' },
+                { title: 'No zero days.', description: 'Make progress every single day, no matter how small.', thumbnail: 'https://placehold.co/600x400/121212/ff5e00?text=NO+ZERO+DAYS' },
+                { title: 'Keep promises to yourself.', description: 'Build self-trust and discipline by honoring your commitments.', thumbnail: 'https://placehold.co/600x400/121212/ff9d00?text=KEEP+PROMISES' },
+                { title: 'Discipline > Motivation.', description: 'Rely on consistent discipline, not fleeting motivation.', thumbnail: 'https://placehold.co/600x400/121212/ff2a00?text=DISCIPLINE' },
+                { title: 'Don’t skip pain, grow through it.', description: 'Embrace challenges as opportunities for growth.', thumbnail: 'https://placehold.co/600x400/121212/ff5e00?text=GROW+THROUGH+PAIN' },
+                { title: 'I will be unrecognizable in 1 year.', description: 'Commit to radical self-transformation and improvement.', thumbnail: 'https://placehold.co/600x400/121212/ff9d00?text=UNRECOGNIZABLE' },
+                { title: 'No dopamine distractions until goals done.', description: 'Prioritize productive work over instant gratification.', thumbnail: 'https://placehold.co/600x400/121212/ff2a00?text=NO+DISTRACTIONS' },
+                { title: 'Avoid unnecessary arguments', description: 'Maintain peace and focus.', thumbnail: 'https://placehold.co/600x400/121212/ff2a00?text=NO+ARGUMENTS' },
+                { title: '3-4L water', description: 'Stay hydrated throughout the day.', thumbnail: 'https://placehold.co/600x400/121212/ff5e00?text=HYDRATE' },
+                { title: 'No sugar/junk/fried food', description: 'Maintain a clean diet.', thumbnail: 'https://placehold.co/600x400/121212/ff9d00?text=HEALTHY+DIET' },
+                { title: 'Code daily (no zero days)', description: 'Consistent coding practice.', thumbnail: 'https://placehold.co/600x400/121212/ff2a00?text=CODE+DAILY' },
+                { title: 'Maintain personal notes (simple & clear)', description: 'Organize your thoughts.', thumbnail: 'https://placehold.co/600x400/121212/ff5e00?text=PERSONAL+NOTES' },
+                { title: 'Document projects (README, LinkedIn post)', description: 'Showcase your work.', thumbnail: 'https://placehold.co/600x400/121212/ff9d00?text=DOCUMENT+PROJECTS' },
+                { title: 'Spend money wisely', description: 'Be mindful of your expenditures.', thumbnail: 'https://placehold.co/600x400/121212/ff5e00?text=SPEND+WISELY' },
+                { title: 'Always do when it is hard', description: 'Pursue difficult tasks for growth.', thumbnail: 'https://placehold.co/600x400/121212/ff9d00?text=DO+HARD+THINGS' },
+                { title: 'Wake up at 5 AM', description: 'Start your day early.', thumbnail: 'https://placehold.co/600x400/121212/ff2a00?text=WAKE+UP+5AM' },
+            ],
+            goal: [
+                { title: 'My Ultimate Goal', description: 'My ultimate goal is to setup a startup in next 5years', thumbnail: 'https://placehold.co/600x400/121212/ff9d00?text=ULTIMATE+GOAL' },
+                { title: 'Milestone 1', description: 'Launch the first version of my app.', thumbnail: 'https://placehold.co/600x400/121212/ff2a00?text=MILESTONE+1' },
+            ],
+            neverDo: [
+                { title: 'Early internships without skills', description: 'Focus on skill development first.', thumbnail: 'https://placehold.co/600x400/121212/ff2a00?text=NO+EARLY+INTERNSHIPS' },
+                { title: 'Bad friendships / toxic groups', description: 'Surround yourself with positivity.', thumbnail: 'https://placehold.co/600x400/121212/ff5e00?text=AVOID+TOXICITY' },
+                { title: 'Unnecessary clubs', description: 'Prioritize valuable commitments.', thumbnail: 'https://placehold.co/600x400/121212/ff9d00?text=NO+USELESS+CLUBS' },
+                { title: 'Neglecting academics', description: 'Academics are the foundation.', thumbnail: 'https://placehold.co/600x400/121212/ff2a00?text=FOCUS+ACADEMICS' },
+                { title: 'Relationships in college', description: 'Stay focused on personal growth.', thumbnail: 'https://placehold.co/600x400/121212/ff5e00?text=NO+COLLEGE+RELATIONSHIPS' },
+                { title: 'Sharing personal info', description: 'Maintain privacy and discretion.', thumbnail: 'https://placehold.co/600x400/121212/ff9d00?text=KEEP+PRIVATE' },
+                { title: 'Depending on friends', description: 'Cultivate self-reliance.', thumbnail: 'https://placehold.co/600x400/121212/ff2a00?text=BE+INDEPENDENT' },
+                { title: 'Smoking/drinking', description: 'Maintain a healthy lifestyle.', thumbnail: 'https://placehold.co/600x400/121212/ff5e00?text=NO+BAD+HABITS' },
+                { title: 'Gaming addiction', description: 'Balance leisure with productivity.', thumbnail: 'https://placehold.co/600x400/121212/ff9d00?text=AVOID+GAMING+ADDICTION' },
+                { title: 'Roaming without purpose', description: 'Utilize time efficiently.', thumbnail: 'https://placehold.co/600x400/121212/ff2a00?text=NO+AIMLESS+ROAMING' },
+                { title: 'Poor time management', description: 'Master your schedule.', thumbnail: 'https://placehold.co/600x400/121212/ff5e00?text=MANAGE+TIME' },
+                { title: 'Ignoring fundamentals', description: 'Build a strong base of knowledge.', thumbnail: 'https://placehold.co/600x400/121212/ff9d00?text=DON\'T+IGNORE+FUNDAMENTALS' },
+                { title: 'Last-minute study', description: 'Consistent effort is key.', thumbnail: 'https://placehold.co/600x400/121212/ff2a00?text=NO+CRAMMING' },
+                { title: 'Not seeking help', description: 'Don\'t hesitate to ask for assistance.', thumbnail: 'https://placehold.co/600x400/121212/ff5e00?text=SEEK+HELP' },
+                { title: 'Overcommitting', description: 'Know your limits and say no.', thumbnail: 'https://placehold.co/600x400/121212/ff9d00?text=DON\'T+OVERCOMMIT' },
+                { title: 'Ignoring health', description: 'Health is your greatest asset.', thumbnail: 'https://placehold.co/600x400/121212/ff2a00?text=PRIORITIZE+HEALTH' },
+                { title: 'Avoiding networking', description: 'Build valuable connections.', thumbnail: 'https://placehold.co/600x400/121212/ff5e00?text=NETWORK' },
+                { title: 'Being shy in opportunities', description: 'Seize every chance to grow.', thumbnail: 'https://placehold.co/600x400/121212/ff9d00?text=BE+BOLD' },
+                { title: 'Saying yes when time is wasted', description: 'Value your time and focus.', thumbnail: 'https://placehold.co/600x400/121212/ff2a00?text=VALUE+YOUR+TIME' },
+            ],
+            mustDo: [
+                { title: 'Build 5 meaningful connections/month on LinkedIn', description: 'Expand your professional network.', thumbnail: 'https://placehold.co/600x400/121212/ff9d00?text=LINKEDIN+NETWORKING' },
+                { title: 'Share 1 progress update every 2 weeks', description: 'Document your journey and achievements.', thumbnail: 'https://placehold.co/600x400/121212/ff2a00?text=SHARE+PROGRESS' },
+                { title: 'Speak confidently with opposite gender', description: 'Improve your communication skills.', thumbnail: 'https://placehold.co/600x400/121212/ff5e00?text=CONFIDENT+SPEAKING' },
+                { title: 'Maintain self-respect without ego', description: 'Balance confidence with humility.', thumbnail: 'https://placehold.co/600x400/121212/ff9d00?text=SELF-RESPECT' },
+                { title: 'Take advice from seniors with results', description: 'Learn from successful mentors.', thumbnail: 'https://placehold.co/600x400/121212/ff2a00?text=LEARN+FROM+SENIORS' },
+                { title: 'Work on soft skills (communication, public speaking)', description: 'Essential for career growth.', thumbnail: 'https://placehold.co/600x400/121212/ff5e00?text=SOFT+SKILLS' },
+                { title: 'Grow in career, academics, physical, mental, spiritual', description: 'Holistic personal development.', thumbnail: 'https://placehold.co/600x400/121212/ff9d00?text=HOLISTIC+GROWTH' },
+                { title: 'Compare only to your past self', description: 'Focus on personal improvement.', thumbnail: 'https://placehold.co/600x400/121212/ff2a00?text=SELF+COMPARISON' },
+                { title: 'Build portfolio from Day 1 (GitHub, LinkedIn)', description: 'Showcase your practical skills.', thumbnail: 'https://placehold.co/600x400/121212/ff5e00?text=BUILD+PORTFOLIO' },
+                { title: 'Do projects (document everything)', description: 'Hands-on experience and record keeping.', thumbnail: 'https://placehold.co/600x400/121212/ff9d00?text=DO+PROJECTS' },
+                { title: 'Focus on aptitude & LR', description: 'Crucial for competitive exams and problem-solving.', thumbnail: 'https://placehold.co/600x400/121212/ff2a00?text=APTITUDE+LR' },
+                { title: 'Learn English & communication', description: 'Enhance your global communication.', thumbnail: 'https://placehold.co/600x400/121212/ff5e00?text=LEARN+ENGLISH' },
+                { title: 'Maintain GitHub & LinkedIn actively', description: 'Keep your professional presence strong.', thumbnail: 'https://placehold.co/600x400/121212/ff9d00?text=ACTIVE+PROFILES' },
+            ],
+        };
+
+        // DOM elements
+        const tabs = document.querySelectorAll('.tab');
+        const contentContainer = document.getElementById('content-container');
+        const goalText = document.getElementById('goal-text');
+        const progressBar = document.getElementById('progressBar');
+        const resetButton = document.getElementById('resetButton');
+
+        // Modal Elements
+        const modalOverlay = document.getElementById('modal-overlay');
+        const modalBody = document.getElementById('modal-body');
+        const closeModalButton = document.getElementById('close-modal');
+
+        // Context Menu Elements (kept for potential future use, but not actively used for pre/post-workout now)
+        const contextMenu = document.getElementById('context-menu');
+
+        // Audio Elements
+        const tabClickSound = document.getElementById('tabClickSound');
+        const taskCheckSound = document.getElementById('taskCheckSound');
+        taskCheckSound.volume = 0.5; // Set volume to 50%
+
+        // Tabs that are considered "routines" and should have progress tracking
+        // Removed 'vault' from routineTabs as per user's request.
+        const routineTabs = ['morning', 'polaris', 'evening', 'commitments', 'neverDo', 'mustDo'];
+
+        // Store checked states for each tab's items and the last visit date using localStorage
+        let checkedStates = JSON.parse(localStorage.getItem('checkedStates')) || {};
+        // Removed global 'let lastVisitDate' declaration to avoid temporal dead zone issues.
+
+        // YouTube API Key (provided by the user)
+        const YOUTUBE_API_KEY = 'AIzaSyBrZ4e_rUvb6CzRif9XDLrLOajRLyeMfGM'; // Corrected YouTube API Key
+        // Gemini API Key (provided by the user)
+        const GEMINI_API_KEY = 'AIzaSyCEyjy-a5arZu7tZ4b7Ege8JfO5QtXHRDo';
+
+
+        // Function to save checked states to local storage
+        function saveCheckedStates() {
+            localStorage.setItem('checkedStates', JSON.stringify(checkedStates));
+        }
+
+        // Function to create a tile HTML element
+        function createTile(tile, tabName, index) {
+            // If it's a loading tile, display a spinner
+            if (tile.type === 'loading') {
+                return `
+                    <div class="tile p-6 flex flex-col items-center justify-center space-y-4">
+                        <div class="loading-spinner"></div>
+                        <h3 class="text-xl font-bold font-['Teko'] text-white">${tile.title}</h3>
+                        <p class="text-sm opacity-80 mt-1 text-center">${tile.description}</p>
+                    </div>
+                `;
+            }
+            // If it's a "no content" tile, display a message
+            if (tile.type === 'no-content') {
+                return `
+                    <div class="tile p-6 flex flex-col items-center justify-center space-y-4 text-center">
+                        <i class="fa-solid fa-face-sad-tear text-6xl text-gray-500 mb-4"></i>
+                        <h3 class="text-xl font-bold font-['Teko'] text-white">${tile.title}</h3>
+                        <p class="text-sm opacity-80 mt-1">${tile.description}</p>
+                    </div>
+                `;
+            }
+
+            const isChecked = checkedStates[tabName] && checkedStates[tabName][index];
+            return `
+                <div class="tile p-6 flex flex-col space-y-4 cursor-pointer ${isChecked && routineTabs.includes(tabName) ? 'checked' : ''}" data-tab="${tabName}" data-index="${index}">
+                    ${tile.thumbnail ? `<div class="thumbnail-placeholder w-full h-40 bg-cover bg-center rounded-xl" style="background-image: url('${tile.thumbnail}');"></div>` : ''}
+                    <div class="context-area">
+                        <h3 class="text-3xl font-bold font-['Teko'] text-white">${tile.title}</h3>
+                        <p class="text-sm opacity-80 mt-1">${tile.description}</p>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Function to open the modal
+        function openModal(title, contentHtml, showCompletionButton, clickedTabName, clickedIndex) {
+            modalBody.innerHTML = `
+                <div class="flex flex-col items-center">
+                    <h3 class="text-4xl font-bold font-['Teko'] header-text mb-4 text-center">${title}</h3>
+                    <div class="modal-content-area w-full">
+                        ${contentHtml}
+                    </div>
+                    ${showCompletionButton ? `
+                        <button id="modal-complete-button" class="mt-4 bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-full transition-all duration-300 transform hover:scale-105">
+                            Mark as Completed
+                        </button>
+                    ` : ''}
+                </div>
+            `;
+            modalOverlay.classList.add('active');
+
+            if (showCompletionButton) {
+                document.getElementById('modal-complete-button').addEventListener('click', () => {
+                    if (!checkedStates[clickedTabName]) {
+                        checkedStates[clickedTabName] = {};
+                    }
+                    checkedStates[clickedTabName][clickedIndex] = true; // Mark as checked
+                    saveCheckedStates();
+                    const tileElement = document.querySelector(`.tile[data-tab="${clickedTabName}"][data-index="${clickedIndex}"]`);
+                    if (tileElement) {
+                        tileElement.classList.add('checked'); // Add checked class for glow
+                    }
+                    updateProgressBar(clickedTabName);
+                    taskCheckSound.play(); // Play sound when task is checked
+                    closeModal(); // Close modal after completion
+                });
+            }
+        }
+
+        // Function to close the modal
+        function closeModal() {
+            modalOverlay.classList.remove('active');
+            // Stop any playing videos in the modal
+            modalBody.innerHTML = ''; 
+        }
+        
+        // Function to handle tile clicks
+        function handleTileClick(tileElement) {
+            const clickedTabName = tileElement.dataset.tab;
+            const clickedIndex = parseInt(tileElement.dataset.index);
+
+            // Add a check to ensure clickedIndex is a valid number and tileData exists
+            if (isNaN(clickedIndex) || !tabContent[clickedTabName] || !tabContent[clickedTabName][clickedIndex]) {
+                console.error("Invalid tile click: clickedIndex is NaN or tileData is undefined.", { clickedTabName, clickedIndex });
+                return; // Exit function if data is invalid
+            }
+
+            const tileData = tabContent[clickedTabName][clickedIndex];
+
+            // If it's a loading or no-content tile, do nothing on click
+            if (tileData.type === 'loading' || tileData.type === 'no-content') {
+                return;
+            }
+
+            const isRoutineTile = routineTabs.includes(clickedTabName);
+            const isCurrentlyChecked = checkedStates[clickedTabName] && checkedStates[clickedTabName][clickedIndex];
+
+            // Determine if the completion button should be shown.
+            // It should only be shown for routine tiles that are not yet checked, and have video/context/details.
+            // Adrenaline Vault videos should NOT show the completion button.
+            const showCompletionButton = isRoutineTile && !isCurrentlyChecked && (tileData.videoUrl || tileData.contextItems || tileData.details);
+
+            if (isRoutineTile) {
+                // If it's a routine tile and already checked, uncheck it on click
+                if (isCurrentlyChecked) {
+                    if (!checkedStates[clickedTabName]) {
+                        checkedStates[clickedTabName] = {};
+                    }
+                    checkedStates[clickedTabName][clickedIndex] = false; // Uncheck
+                    saveCheckedStates();
+                    tileElement.classList.remove('checked');
+                    updateProgressBar(clickedTabName);
+                    return; // Stop further processing for this click
+                }
+
+                // If it's a routine tile and NOT checked, proceed to open modal or mark directly
+                if (tileData.videoUrl || tileData.contextItems || tileData.details) {
+                    // Open modal for video or context items
+                    let modalHtml = '';
+                    let modalTitle = tileData.title;
+
+                    if (tileData.videoUrl) {
+                        // Determine if it's a direct video URL (like Cloudinary .mp4) or an embeddable platform (YouTube/Cloudinary embed)
+                        const isDirectVideo = tileData.videoUrl.endsWith('.mp4') || tileData.videoUrl.endsWith('.webm') || tileData.videoUrl.endsWith('.ogg');
+                        let videoSrc = tileData.videoUrl;
+
+                        if (videoSrc.includes('youtube.com/watch?v=')) {
+                            videoSrc = videoSrc.replace('watch?v=', 'embed/').split('&')[0];
+                        } 
+                        // Cloudinary embed URLs are already in a format suitable for iframes
+                        
+                        modalHtml = `
+                            <div class="flex justify-center w-full">
+                                <div class="aspect-9-16 w-full max-w-sm">
+                                    ${isDirectVideo ? 
+                                        `<video controls autoplay class="w-full h-full rounded-xl" ${clickedTabName === 'vault' ? 'loop' : ''}><source src="${videoSrc}" type="video/mp4">Your browser does not support the video tag."></video>` :
+                                        `<iframe src="${videoSrc}${clickedTabName === 'vault' ? '&loop=1&playlist=' + videoSrc.split('/').pop().split('?')[0] : ''}" frameborder="0" allowfullscreen class="w-full h-full rounded-xl" id="video-player"></iframe>`
+                                    }
+                                </div>
+                            </div>
+                        `;
+                    } else if (tileData.details) { // For quote or life lesson details
+                        modalHtml = `<p class="text-lg opacity-90">${tileData.details}</p>`;
+                    } else if (tileData.contextItems) {
+                        modalHtml = `
+                            <ul class="list-disc list-inside text-left text-lg space-y-2">
+                                ${tileData.contextItems.map(item => `<li>${item}</li>`).join('')}
+                            </ul>
+                        `;
+                    }
+                    
+                    openModal(modalTitle, modalHtml, showCompletionButton, clickedTabName, clickedIndex);
+
+                } else {
+                    // Directly toggle checked state for routine tiles without special modal content
+                    if (!checkedStates[clickedTabName]) {
+                        checkedStates[clickedTabName] = {};
+                    }
+                    checkedStates[clickedTabName][clickedIndex] = true; // Mark as checked
+                    saveCheckedStates();
+                    tileElement.classList.add('checked');
+                    updateProgressBar(clickedTabName);
+                    taskCheckSound.play(); // Play sound when task is checked
+                }
+            } else {
+                // This is a non-routine tab (like 'vault', 'lesson', 'quote', 'goal'), open a modal with the content (no check-in logic)
+                let modalHtml = '';
+                if (tileData.videoUrl) { // This case is for 'vault' tab videos or fetched YouTube videos
+                    const isDirectVideo = tileData.videoUrl.endsWith('.mp4') || tileData.videoUrl.endsWith('.webm') || tileData.videoUrl.endsWith('.ogg');
+                    let videoSrc = tileData.videoUrl;
+                    if (videoSrc.includes('youtube.com/watch?v=')) {
+                        videoSrc = videoSrc.replace('watch?v=', 'embed/').split('&')[0];
+                    } 
+
+                    modalHtml = `
+                        <div class="flex justify-center w-full">
+                            <div class="aspect-9-16 w-full max-w-sm">
+                                ${isDirectVideo ? 
+                                    `<video controls autoplay class="w-full h-full rounded-xl" ${clickedTabName === 'vault' ? 'loop' : ''}><source src="${videoSrc}" type="video/mp4">Your browser does not support the video tag."></video>` :
+                                    `<iframe src="${videoSrc}${clickedTabName === 'vault' ? '&loop=1&playlist=' + videoSrc.split('/').pop().split('?')[0] : ''}" frameborder="0" allowfullscreen class="w-full h-full rounded-xl" id="video-player"></iframe>`
+                                }
+                            </div>
+                        </div>
+                    `;
+                } else if (tileData.details) {
+                    modalHtml = `<p class="text-lg opacity-90">${tileData.details}</p>`;
+                } else {
+                    modalHtml = `<p class="text-lg opacity-90">${tileData.description}</p>`;
+                }
+                // For non-routine tabs, showCompletionButton is always false
+                openModal(tileData.title, modalHtml, false, clickedTabName, clickedIndex);
+            }
+        }
+
+        // Function to show context menu (not used for pre/post-workout anymore)
+        function showContextMenu(x, y, items, tileElement) {
+            contextMenu.innerHTML = '';
+            items.forEach(item => {
+                const div = document.createElement('div');
+                div.classList.add('context-menu-item');
+                div.textContent = item;
+                contextMenu.appendChild(div);
+            });
+            contextMenu.style.left = `${x}px`;
+            contextMenu.style.top = `${y}px`;
+            contextMenu.classList.add('active');
+            contextMenu.dataset.tileTab = tileElement.dataset.tab;
+            contextMenu.dataset.tileIndex = tileElement.dataset.index;
+        }
+
+        // Function to hide context menu
+        function hideContextMenu() {
+            contextMenu.classList.remove('active');
+        }
+
+        // Function to update the content area with a new set of tiles
+        function updateContent(tabName) {
+            // Start fade out animation
+            contentContainer.classList.remove('fade-in');
+            contentContainer.classList.add('fade-out');
+
+            setTimeout(() => {
+                // Clear old content
+                contentContainer.innerHTML = '';
+                
+                const content = tabContent[tabName] || [];
+                const htmlContent = content.map((tile, index) => createTile(tile, tabName, index)).join('');
+                
+                contentContainer.innerHTML = htmlContent;
+
+                // Set the correct grid layout for all tabs, or a single column for special tabs
+                // Removed 'lifeAdvice', 'goggins', 'lifeQuotes' from this list
+                if (['lesson', 'quote', 'goal', 'vault'].includes(tabName)) {
+                    contentContainer.className = 'w-full max-w-6xl content-container grid grid-cols-1 gap-8 fade-in';
+                } else {
+                     contentContainer.className = 'w-full max-w-6xl content-container grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 fade-in';
+                }
+                
+                // Add event listeners for check-in animation and modal logic
+                document.querySelectorAll('.tile').forEach(tileElement => {
+                    tileElement.addEventListener('click', (event) => {
+                        // Always handle left-click for all tiles
+                        if (event.button === 0) { 
+                            handleTileClick(tileElement);
+                        }
+                    });
+                    // Removed contextmenu listener for pre/post-workout as they now use left-click
+                    // The context menu logic can be re-added here if other tiles need right-click functionality
+                });
+
+                // Start fade in animation for new content
+                contentContainer.classList.remove('fade-out');
+                contentContainer.classList.add('fade-in');
+
+                // Update the goal text in the header
+                if (tabName === 'goal' && content.length > 0) {
+                    goalText.textContent = content[0].title.toUpperCase();
+                } else {
+                    goalText.textContent = "UNLEASH YOUR INNER FIRE";
+                }
+                updateProgressBar(tabName);
+            }, 500); // Wait for the fade-out transition to complete
+        }
+
+        // Function to update the progress bar based on completed tasks
+        function updateProgressBar(currentTabName) {
+            const currentTabContent = tabContent[currentTabName];
+            const currentTabElement = document.querySelector(`.tab[data-tab="${currentTabName}"]`);
+            
+            // Check if the current tab should have a progress bar
+            if (!currentTabContent || !routineTabs.includes(currentTabName)) {
+                progressBar.style.width = '0%';
+                if (currentTabElement) currentTabElement.classList.remove('progress');
+                return;
+            }
+
+            const totalTasks = currentTabContent.length;
+            const completedTasks = Object.values(checkedStates[currentTabName] || {}).filter(Boolean).length;
+            
+            const progressPercentage = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
+            progressBar.style.width = `${progressPercentage}%`;
+
+            // Update the progress indicator on the tab itself
+            if (currentTabElement) {
+                if (completedTasks > 0 && completedTasks < totalTasks) {
+                    currentTabElement.classList.add('progress');
+                } else {
+                    currentTabElement.classList.remove('progress');
+                }
+            }
+        }
+
+        // Function to reset the dashboard progress
+        function resetDailyProgress() {
+            checkedStates = {};
+            localStorage.removeItem('checkedStates');
+            localStorage.setItem('lastVisitDate', new Date().toDateString());
+            // Re-render the current tab to reflect the reset state
+            const activeTab = document.querySelector('.tab.active');
+            if (activeTab) {
+                updateContent(activeTab.dataset.tab);
+            }
+            // Update all tab progress indicators
+            tabs.forEach(tab => tab.classList.remove('progress'));
+        }
+
+        // --- Firestore Functions ---
+        async function getDailyContent(date, contentType) {
+            if (!userId) {
+                console.warn("User not authenticated. Cannot fetch daily content from Firestore.");
+                return null;
+            }
+            try {
+                // Modified path for per-user storage
+                const docRef = doc(db, `artifacts/${appId}/users/${userId}/daily_content`, date);
+                const docSnap = await getDoc(docRef);
+                if (docSnap.exists()) {
+                    return docSnap.data()[contentType];
+                }
+            } catch (error) {
+                console.error(`Error getting ${contentType} from Firestore:`, error);
+            }
+            return null;
+        }
+
+        async function saveDailyContent(date, contentType, data) {
+            if (!userId) {
+                console.warn("User not authenticated. Cannot save daily content to Firestore.");
+                return;
+            }
+            try {
+                // Modified path for per-user storage
+                const docRef = doc(db, `artifacts/${appId}/users/${userId}/daily_content`, date);
+                // Use setDoc with merge: true to avoid overwriting other content for the same date
+                await setDoc(docRef, { [contentType]: data }, { merge: true });
+                console.log(`${contentType} saved to Firestore for ${date}`);
+            } catch (error) {
+                console.error(`Error saving ${contentType} to Firestore:`, error);
+            }
+        }
+
+        // --- Gemini API for Quote of the Day ---
+        async function fetchQuoteOfTheDay(specificTheme = null, retries = 3, delay = 1000) {
+            const todayDate = new Date().toDateString();
+            let quoteData = await getDailyContent(todayDate, 'quote');
+
+            if (quoteData) {
+                tabContent.quote = [
+                    { title: 'Quote of the Day', description: quoteData.text, details: quoteData.text }
+                ];
+                if (document.querySelector('.tab.active')?.dataset.tab === 'quote') {
+                    updateContent('quote');
+                }
+                return;
+            }
+
+            // If not found in Firestore, fetch from Gemini API
+            try {
+                // Display loading state
+                tabContent.quote = [{ title: 'Loading Quote...', description: 'Please wait while we fetch the quote of the day.', type: 'loading' }];
+                if (document.querySelector('.tab.active')?.dataset.tab === 'quote') {
+                    updateContent('quote');
+                }
+
+                const themes = [
+                    'perseverance', 'growth mindset', 'action', 'wisdom', 'success', 'failure', 'learning', 'discipline', 'courage', 'resilience',
+                    'Telugu wisdom', 'Telugu proverbs', 'inspiration in Telugu', 'life lessons from Telugu culture', 'inner strength', 'self-belief',
+                    'overcoming challenges', 'positive thinking', 'mindfulness', 'determination', 'focus', 'consistency', 'patience', 'gratitude',
+                    'humility', 'integrity', 'passion', 'purpose', 'vision', 'innovation', 'leadership', 'teamwork', 'empathy', 'compassion',
+                    'courage to change', 'embracing discomfort', 'building habits', 'mental toughness', 'emotional intelligence', 'adaptability',
+                    'creativity', 'problem-solving', 'strategic thinking', 'continuous improvement', 'legacy', 'impact', 'contribution', 'freedom',
+                    'abundance', 'simplicity', 'balance', 'joy', 'peace', 'love', 'kindness', 'generosity', 'forgiveness', 'acceptance'
+                ];
+                const selectedTheme = specificTheme || themes[Math.floor(Math.random() * themes.length)];
+
+                let chatHistory = [];
+                chatHistory.push({ role: "user", parts: [{ text: `Provide a concise, impactful, and motivational quote about ${selectedTheme} suitable for a 'Quote of the Day' dashboard. Include the author if known. Format it as '\"Quote text.\" - Author' or just 'Quote text.' if author is unknown. Do not include any other text or formatting, just the quote.` }] });
+                const payload = { contents: chatHistory };
+                const apiKey = GEMINI_API_KEY; 
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+                
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const result = await response.json();
+                
+                // Corrected the condition to access result.candidates[0].content.parts
+                if (result.candidates && result.candidates.length > 0 &&
+                    result.candidates[0].content && result.candidates[0].content.parts &&
+                    result.candidates[0].content.parts.length > 0) {
+                    const quoteText = result.candidates[0].content.parts[0].text.trim();
+                    // Extract author more robustly, assuming "- Author" at the end
+                    const authorMatch = quoteText.match(/^(.*?)\s*-\s*(.+)$/);
+                    let cleanedQuoteText = quoteText;
+                    let author = 'Unknown';
+
+                    if (authorMatch && authorMatch.length === 3) {
+                        cleanedQuoteText = authorMatch[1].trim();
+                        author = authorMatch[2].trim();
+                    }
+                    
+                    const newQuoteData = { text: cleanedQuoteText, author: author };
+                    await saveDailyContent(todayDate, 'quote', newQuoteData); // Save to Firestore
+
+                    tabContent.quote = [
+                        { title: 'Quote of the Day', description: newQuoteData.text, details: newQuoteData.text }
+                    ];
+                } else {
+                    tabContent.quote = [
+                        { title: 'Quote Not Found', description: 'Could not fetch quote. Please try again later.', details: 'An error occurred while fetching the quote.' }
+                    ];
+                }
+            } catch (error) {
+                console.error('Error fetching quote:', error);
+                if (retries > 0) {
+                    console.log(`Retrying fetchQuoteOfTheDay... (${retries} retries left)`);
+                    await new Promise(res => setTimeout(res, delay));
+                    return fetchQuoteOfTheDay(specificTheme, retries - 1, delay * 2); // Exponential backoff
+                } else {
+                    tabContent.quote = [
+                        { title: 'Quote Error', description: 'Failed to load quote after multiple attempts.', details: 'There was an issue connecting to the quote service.' }
+                    ];
+                }
+            } finally {
+                // Update content regardless of success or failure to remove loading state
+                if (document.querySelector('.tab.active')?.dataset.tab === 'quote') {
+                    updateContent('quote');
+                }
+            }
+        }
+
+        // --- Generic Video Fetching Function (for Life Lesson) ---
+        async function fetchAndSetDailyVideoContent(contentType, retries = 3, delay = 1000) {
+            const todayDate = new Date().toDateString();
+            console.log(`Attempting to fetch ${contentType} video for date:`, todayDate);
+            let videoData = await getDailyContent(todayDate, contentType);
+
+            if (videoData) {
+                console.log(`${contentType} video found in Firestore:`, videoData);
+                tabContent[contentType] = [
+                    { 
+                        title: videoData.title, 
+                        description: videoData.description, 
+                        thumbnail: videoData.thumbnail, 
+                        videoUrl: videoData.videoUrl 
+                    }
+                ];
+                if (document.querySelector('.tab.active')?.dataset.tab === contentType) {
+                    updateContent(contentType);
+                }
+                return;
+            }
+
+            console.log(`${contentType} video not found in Firestore. Fetching from YouTube API.`);
+            try {
+                // Display loading state
+                tabContent[contentType] = [{ title: `Loading ${contentType.replace(/([A-Z])/g, ' $1').trim()}...`, description: 'Please wait while we fetch a new video for you.', type: 'loading' }];
+                if (document.querySelector('.tab.active')?.dataset.tab === contentType) {
+                    updateContent(contentType);
+                }
+
+                // Define a comprehensive list of video content queries
+                const videoContentQueries = [
+                    'life lesson', 'lifelessons,successmindset,noexcuses,davidgogginsquotes,motivationalshorts,mentalfortitude,unbreakablespirit,riseandgrind,dailygrind,powerofdiscipline,consistencyiskey,navysealmentality,overcomefailure,toughdecisions,relentlesspursuit,neverquit,inspirationalmindset,emotionalresilience,stoicwisdom,growthdaily,greatnesswithin,becomeunstoppable,fearlessmindset,hardshipstories,conqueringfear,pushinglimits',
+                    'short motivational speech', 'daily inspiration video', 'wisdom for life', 'self-improvement short', 'discipline motivation',
+                    'mindset shift video', 'overcome adversity short', 'success principles explained', 'personal growth tips', 'Telugu motivational speech',
+                    'Telugu life lesson', 'Telugu inspiration', 'short wisdom quotes', 'powerful life advice', 'daily discipline routine',
+                    'mental resilience training', 'unbreakable spirit motivation', 'rise and grind mindset', 'consistency in life',
+                    'navy seal motivation short', 'overcome failure mindset', 'tough decisions motivation', 'relentless pursuit of goals',
+                    'never quit attitude', 'inspirational mindset short', 'emotional resilience tips', 'stoic philosophy explained',
+                    'growth mindset daily', 'greatness within you', 'become unstoppable motivation', 'fearless mindset short',
+                    'hardship stories inspiration', 'conquering fear motivation', 'pushing limits motivation'
+                ];
+                
+                // Randomly select one query from the list
+                const randomQueryIndex = Math.floor(Math.random() * videoContentQueries.length);
+                const selectedYoutubeQuery = videoContentQueries[randomQueryIndex];
+
+                // Added videoDuration=short to filter for shorter videos (typically under 4 minutes)
+                const youtubeApiUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(selectedYoutubeQuery)}&type=video&maxResults=5&videoDuration=short&key=${YOUTUBE_API_KEY}`; 
+                console.log("YouTube API URL:", youtubeApiUrl);
+
+                const response = await fetch(youtubeApiUrl);
+                console.log("YouTube API Response Status:", response.status);
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error("YouTube API Error Response Body:", errorText);
+                    throw new Error(`HTTP error! status: ${response.status} - ${errorText}`);
+                }
+
+                const data = await response.json();
+                console.log("YouTube API Response Data:", data);
+
+                if (data.items && data.items.length > 0) {
+                    console.log("YouTube API returned items. Number of items:", data.items.length);
+                    
+                    // Filter for videos that are likely to be "shorts" or concise based on common short video titles/descriptions
+                    // Note: YouTube's 'videoDuration=short' parameter generally filters for videos under 4 minutes.
+                    // Directly filtering for "less than 2 minutes" would require fetching contentDetails for each video,
+                    // which is inefficient and can quickly exhaust API quotas.
+                    const shortVideoKeywords = ['short', 'shorts', 'reel', 'clip', 'quick', 'minute', 'daily', 'motivation', 'inspiration', 'advice', 'lesson', 'quote'];
+                    const filteredVideos = data.items.filter(video => {
+                        const title = video.snippet.title.toLowerCase();
+                        const description = video.snippet.description.toLowerCase();
+                        return shortVideoKeywords.some(keyword => title.includes(keyword) || description.includes(keyword));
+                    });
+
+                    console.log("Filtered videos (likely shorts):", filteredVideos.length);
+
+                    let videoToUse = null;
+                    if (filteredVideos.length > 0) {
+                        // Pick a random video from the filtered (likely short) items
+                        const randomIndex = Math.floor(Math.random() * filteredVideos.length);
+                        videoToUse = filteredVideos[randomIndex];
+                        console.log("Selected filtered video:", videoToUse.snippet.title);
+                    } else {
+                        // If no "short" videos found in the filtered list, pick a random video from the original broader list
+                        const randomIndex = Math.floor(Math.random() * data.items.length);
+                        videoToUse = data.items[randomIndex];
+                        console.log("No filtered videos, selected random from all items:", videoToUse.snippet.title);
+                    }
+                    
+                    const videoId = videoToUse.id.videoId;
+                    const videoTitle = videoToUse.snippet.title;
+                    const videoDescription = videoToUse.snippet.description;
+                    const thumbnailUrl = videoToUse.snippet.thumbnails.high.url;
+                    const videoUrl = `https://www.youtube.com/watch?v=${videoId}`; // Store original URL, modal converts to embed
+
+                    const newVideoData = {
+                        title: videoTitle,
+                        description: videoDescription,
+                        thumbnail: thumbnailUrl,
+                        videoUrl: videoUrl
+                    };
+                    await saveDailyContent(todayDate, contentType, newVideoData); // Save to Firestore
+                    console.log(`${contentType} video saved to Firestore:`, newVideoData);
+
+                    tabContent[contentType] = [
+                        { 
+                            title: newVideoData.title, 
+                            description: newVideoData.description, 
+                            thumbnail: newVideoData.thumbnail, 
+                            videoUrl: newVideoData.videoUrl 
+                        }
+                    ];
+                } else {
+                    console.warn(`YouTube API returned no items for the ${contentType} query.`);
+                    // If no videos are found from API, set a placeholder message
+                    tabContent[contentType] = [
+                        { 
+                            title: `No ${contentType.replace(/([A-Z])/g, ' $1').trim()} Found`, 
+                            description: 'Could not find a relevant video for today. Please try again later.', 
+                            thumbnail: 'https://placehold.co/600x400/121212/ff9d00?text=NO+VIDEO', 
+                            videoUrl: '',
+                            type: 'no-content'
+                        }
+                    ];
+                }
+            } catch (error) {
+                console.error(`Caught error during ${contentType} video fetch:`, error);
+                if (retries > 0) {
+                    console.log(`Retrying fetchAndSetDailyVideoContent for ${contentType}... (${retries} retries left)`);
+                    await new Promise(res => setTimeout(res, delay));
+                    return fetchAndSetDailyVideoContent(contentType, retries - 1, delay * 2); // Exponential backoff
+                } else {
+                    // If API calls fail after retries, set a placeholder message
+                    tabContent[contentType] = [
+                        { 
+                            title: `Video Load Error for ${contentType.replace(/([A-Z])/g, ' $1').trim()}`, 
+                            description: 'There was an issue connecting to the video service. Please check your network or try again later.', 
+                            thumbnail: 'https://placehold.co/600x400/121212/ff9d00?text=ERROR', 
+                            videoUrl: '',
+                            type: 'no-content'
+                        }
+                    ];
+                }
+            } finally {
+                // Update content regardless of success or failure to remove loading state
+                if (document.querySelector('.tab.active')?.dataset.tab === contentType) {
+                    updateContent(contentType);
+                }
+            }
+        }
+
+        // Add event listeners to each tab
+        tabs.forEach(tab => {
+            tab.addEventListener('click', async () => {
+                // Play tab click sound
+                tabClickSound.play();
+
+                // Remove 'active' class from all tabs
+                tabs.forEach(t => t.classList.remove('active'));
+                
+                // Add 'active' class to the clicked tab
+                tab.classList.add('active');
+
+                // Update the content based on the data-tab attribute
+                const tabName = tab.dataset.tab;
+                updateContent(tabName);
+
+                // Fetch dynamic content if needed
+                if (tabName === 'quote') {
+                    // The 'daily_dynamic_video_type' is no longer used for dynamic quote themes
+                    // as the dynamic tabs have been removed.
+                    // Revert to general themes for quotes.
+                    await fetchQuoteOfTheDay(null); 
+                } else if (tabName === 'lesson') {
+                    // Call fetchAndSetDailyVideoContent without a specific query, it will pick one randomly
+                    await fetchAndSetDailyVideoContent('lesson');
+                }
+                // Removed the logic for 'lifeAdvice', 'goggins', 'lifeQuotes' tabs as they are removed.
+            });
+        });
+
+        // Add event listener to the reset button
+        resetButton.addEventListener('click', resetDailyProgress);
+        
+        // Add event listener to the modal close button
+        closeModalButton.addEventListener('click', closeModal);
+        modalOverlay.addEventListener('click', (e) => {
+            if (e.target.id === 'modal-overlay') {
+                closeModal();
+            }
+        });
+
+        // Hide context menu when clicking anywhere else (still useful if context menu is used elsewhere)
+        document.addEventListener('click', (event) => {
+            if (!contextMenu.contains(event.target) && !event.target.closest('.tile')) {
+                hideContextMenu();
+            }
+        });
+
+        // Initialize dashboard content once authenticated
+        async function initializeDashboard() {
+            const today = new Date().toDateString();
+            const lastVisitDate = localStorage.getItem('lastVisitDate');
+            
+            if (lastVisitDate !== today) {
+                // It's a new day, reset progress and fetch new dynamic content
+                resetDailyProgress(); // This also sets lastVisitDate
+                
+                // Fetch quote of the day (no longer tied to dynamic video types)
+                await fetchQuoteOfTheDay();
+                // Call fetchAndSetDailyVideoContent without a specific query, it will pick one randomly
+                await fetchAndSetDailyVideoContent('lesson');
+
+                // Removed dynamic video content logic for 'lifeAdvice', 'goggins', 'lifeQuotes'
+                // as these tabs are no longer present.
+                // The 'daily_dynamic_video_type' Firestore entry is no longer needed.
+
+            } else {
+                // Not a new day, just load the last active tab or the default
+                const lastActiveTab = localStorage.getItem('lastActiveTab') || 'morning';
+                const activeTabElement = document.querySelector(`.tab[data-tab="${lastActiveTab}"]`);
+                if (activeTabElement) {
+                    activeTabElement.classList.add('active');
+                } else {
+                     document.querySelector('.tab[data-tab="morning"]').classList.add('active');
+                }
+                updateContent(lastActiveTab);
+
+                // Ensure pre-fetched content is loaded even if not a new day
+                // This will load from Firestore if already fetched, otherwise attempt API call
+                await fetchQuoteOfTheDay(); 
+                // Call fetchAndSetDailyVideoContent without a specific query, it will pick one randomly
+                await fetchAndSetDailyVideoContent('lesson');
+
+                // Removed dynamic video content loading logic for 'lifeAdvice', 'goggins', 'lifeQuotes'
+            }
+            // Save the current date as the last visit date (already done in resetDailyProgress if new day)
+            localStorage.setItem('lastVisitDate', today);
+        }
+    </script>
+</body>
+</html>
