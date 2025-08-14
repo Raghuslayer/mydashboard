@@ -474,6 +474,8 @@
                 <button class="tab px-4 py-2 whitespace-nowrap" data-tab="neverDo">Never Do List <span class="progress-dot"></span></button>
                 <button class="tab px-4 py-2 whitespace-nowrap" data-tab="mustDo">Must Do List <span class="progress-dot"></span></button>
                 <button class="tab px-4 py-2 whitespace-nowrap" data-tab="mathematics">Mathematics</button> <!-- New Mathematics Tab -->
+                <!-- New Semester Goals Tab -->
+                <button class="tab px-4 py-2 whitespace-nowrap" data-tab="semesterGoals">Semester Goals <span class="progress-dot"></span></button>
             </div>
         </nav>
         <!--------------------------------->
@@ -780,6 +782,21 @@
                     thumbnail: 'https://placehold.co/600x400/121212/ff5e00?text=COMPETITIVE+MATH'
                 },
             ],
+            // New Semester Goals Tab Content
+            semesterGoals: [
+                {
+                    title: 'Sem1',
+                    description: 'View your Semester 1 Goals and Challenges.',
+                    thumbnail: 'https://placehold.co/600x400/121212/ff9d00?text=SEMESTER+GOALS',
+                    contextItems: [
+                        'Video Editing',
+                        'n8n',
+                        'Content and Story Making on a topic',
+                        'Become Fit',
+                        'MERN Stack'
+                    ]
+                }
+            ],
         };
 
         // DOM elements
@@ -805,6 +822,7 @@
         // Tabs that are considered "routines" and should have progress tracking
         // Removed 'vault' from routineTabs as per user's request.
         // 'mathematics' is not a routine tab, so it's not included here.
+        // 'semesterGoals' is also not considered a routine tab for progress tracking.
         const routineTabs = ['morning', 'polaris', 'evening', 'commitments', 'neverDo', 'mustDo'];
 
         // Store checked states for each tab's items and the last visit date using localStorage
@@ -923,7 +941,7 @@
             // Determine if the completion button should be shown.
             // It should only be shown for routine tiles that are not yet checked, and have video/context/details.
             // Adrenaline Vault videos should NOT show the completion button.
-            // Mathematics tab tiles should also NOT show the completion button as they are informational.
+            // Mathematics tab tiles and Semester Goals tiles should also NOT show the completion button as they are informational.
             const showCompletionButton = isRoutineTile && !isCurrentlyChecked && (tileData.videoUrl || tileData.contextItems || tileData.details);
 
             if (isRoutineTile) {
@@ -989,8 +1007,10 @@
                     taskCheckSound.play(); // Play sound when task is checked
                 }
             } else {
-                // This is a non-routine tab (like 'vault', 'lesson', 'quote', 'goal', 'mathematics'), open a modal with the content (no check-in logic)
+                // This is a non-routine tab (like 'vault', 'lesson', 'quote', 'goal', 'mathematics', 'semesterGoals'), open a modal with the content (no check-in logic)
                 let modalHtml = '';
+                let modalTitle = tileData.title; // Set modal title to tile's title
+
                 if (tileData.videoUrl) { // This case is for 'vault' tab videos or fetched YouTube videos
                     const isDirectVideo = tileData.videoUrl.endsWith('.mp4') || tileData.videoUrl.endsWith('.webm') || tileData.videoUrl.endsWith('.ogg');
                     let videoSrc = tileData.videoUrl;
@@ -1010,11 +1030,17 @@
                     `;
                 } else if (tileData.details) {
                     modalHtml = `<p class="text-lg opacity-90">${tileData.details}</p>`;
+                } else if (tileData.contextItems) { // For semesterGoals (and morning/evening context items)
+                    modalHtml = `
+                        <ul class="list-disc list-inside text-left text-lg space-y-2">
+                            ${tileData.contextItems.map(item => `<li>${item}</li>`).join('')}
+                        </ul>
+                    `;
                 } else {
                     modalHtml = `<p class="text-lg opacity-90">${tileData.description}</p>`;
                 }
-                // For non-routine tabs (including 'mathematics'), showCompletionButton is always false
-                openModal(tileData.title, modalHtml, false, clickedTabName, clickedIndex);
+                // For non-routine tabs (including 'mathematics' and 'semesterGoals'), showCompletionButton is always false
+                openModal(modalTitle, modalHtml, false, clickedTabName, clickedIndex);
             }
         }
 
@@ -1055,10 +1081,10 @@
                 contentContainer.innerHTML = htmlContent;
 
                 // Set the correct grid layout for all tabs, or a single column for special tabs
-                // 'mathematics' tab should also use a multi-column grid as it has many tiles.
+                // 'mathematics' tab and 'semesterGoals' tab should also use a multi-column grid as they have multiple tiles.
                 if (['lesson', 'quote', 'goal'].includes(tabName)) { // These are single-tile tabs
                     contentContainer.className = 'w-full max-w-6xl content-container grid grid-cols-1 gap-8 fade-in';
-                } else { // All other tabs, including 'mathematics', use multi-column grid
+                } else { // All other tabs, including 'mathematics' and 'semesterGoals', use multi-column grid
                      contentContainer.className = 'w-full max-w-6xl content-container grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 fade-in';
                 }
                 
@@ -1443,7 +1469,7 @@
                     // Call fetchAndSetDailyVideoContent without a specific query, it will pick one randomly
                     await fetchAndSetDailyVideoContent('lesson');
                 }
-                // Mathematics tab does not require dynamic content fetching.
+                // Mathematics and Semester Goals tabs do not require dynamic content fetching.
             });
         });
 
