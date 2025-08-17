@@ -476,6 +476,7 @@
                 <button class="tab px-4 py-2 whitespace-nowrap" data-tab="mathematics">Mathematics</button> <!-- New Mathematics Tab -->
                 <!-- New Semester Goals Tab -->
                 <button class="tab px-4 py-2 whitespace-nowrap" data-tab="semesterGoals">Semester Goals <span class="progress-dot"></span></button>
+                <button class="tab px-4 py-2 whitespace-nowrap" data-tab="skills">Skills I Need to Get a Grip <span class="progress-dot"></span></button>
             </div>
         </nav>
         <!--------------------------------->
@@ -637,6 +638,7 @@
         const tabContent = {
             morning: [
                 { title: 'Wake up at 5 AM', description: 'Kickstart your day early.', thumbnail: 'https://placehold.co/600x400/121212/ff5e00?text=WAKE+UP' },
+                { title: 'Record 5min English Video', description: 'Just before workout, practice speaking.', thumbnail: 'https://placehold.co/600x400/121212/ff9d00?text=ENGLISH+VIDEO' },
                 { title: 'Gratitude & Goal Reaffirmation', description: '5 min of mental preparation.', thumbnail: 'https://placehold.co/600x400/121212/ff9d00?text=GRATITUDE', videoUrl: 'https://player.cloudinary.com/embed/?cloud_name=dpragculd&public_id=Are_you_agree_with_it_Selfimprovement_motivation_reel_viral_trending_inspirational_yamcjp&profile=cld-default' },
                 { title: 'Water + Pre-Workout Nutrition', description: 'Fuel your body right (5 min).', thumbnail: 'https://placehold.co/600x400/121212/ff2a00?text=PRE-WORKOUT', contextItems: ['Black coffee', 'Almonds', 'Walnuts', 'Raisins', 'Turmeric and neem capsules'] },
                 { title: 'Workout', description: '30-45 min of high-impact exercise.', thumbnail: 'https://placehold.co/600x400/121212/ff5e00?text=WORKOUT' },
@@ -663,6 +665,8 @@
                 { title: 'Class Revision', description: '30 min to review daily lessons.', thumbnail: 'https://placehold.co/600x400/121212/ff9d00?text=CLASS+REVISION' },
                 { title: 'Project / Coding Practice (Portfolio)', description: '1 hr for personal projects.', thumbnail: 'https://placehold.co/600x400/121212/ff2a00?text=PROJECT+PRACTICE' },
                 { title: 'Dinner', description: '15-20 min mindful eating.', thumbnail: 'https://placehold.co/600x400/121212/ff5e00?text=DINNER' },
+                { title: 'Maths after Dinner', description: 'Dedicated time for math practice.', thumbnail: 'https://placehold.co/600x400/121212/ff9d00?text=MATHS' },
+                { title: 'Write 1 Script of any Topic in 3 Days', description: 'Develop your scriptwriting skills.', thumbnail: 'https://placehold.co/600x400/121212/ff2a00?text=SCRIPTWRITING' },
                 { title: 'Startup Case Study / n8n Tools / Video Editing', description: 'Rotate this 1 hr activity daily.', thumbnail: 'https://placehold.co/600x400/121212/ff9d00?text=SKILL+DEVELOPMENT' },
                 { title: 'Read Failure/Success Stories', description: 'Learn from business case studies.', thumbnail: 'https://placehold.co/600x400/121212/ff2a00?text=BUSINESS+STORIES' }, // New task added here
                 { title: 'Journaling + Tomorrow’s Tasks', description: '15 min reflection and planning.', thumbnail: 'https://placehold.co/600x400/121212/ff2a00?text=JOURNALING' },
@@ -797,6 +801,26 @@
                     ]
                 }
             ],
+            // New "Skills I Need to Get a Grip" Tab Content
+            skills: [
+                { title: 'Coding', description: 'Mastering programming languages and development.', thumbnail: 'https://placehold.co/600x400/121212/ff5e00?text=CODING' },
+                { title: 'Critical Thinking & Decision Making', description: 'Analyzing situations and making effective choices.', thumbnail: 'https://placehold.co/600x400/121212/ff9d00?text=CRITICAL+THINKING' },
+                { title: 'Communication', description: 'Clear and effective verbal and written expression.', thumbnail: 'https://placehold.co/600x400/121212/ff2a00?text=COMMUNICATION' },
+                { title: 'Storytelling', description: 'Engaging audiences through compelling narratives.', thumbnail: 'https://placehold.co/600x400/121212/ff5e00?text=STORYTELLING' },
+                { title: 'Negotiating', description: 'Achieving favorable outcomes through discussion.', thumbnail: 'https://placehold.co/600x400/121212/ff9d00?text=NEGOTIATING' },
+                { title: 'Content Creation', description: 'Producing valuable and engaging digital content.', thumbnail: 'https://placehold.co/600x400/121212/ff2a00?text=CONTENT+CREATION' },
+                { title: 'Video Editing', description: 'Transforming raw footage into polished videos.', thumbnail: 'https://placehold.co/600x400/121212/ff5e00?text=VIDEO+EDITING' },
+                { title: 'Digital Marketing', description: 'Promoting products/services online effectively.', thumbnail: 'https://placehold.co/600x400/121212/ff9d00?text=DIGITAL+MARKETING' },
+                { title: 'Stock Market', description: 'Understanding investments and trading.', thumbnail: 'https://placehold.co/600x400/121212/ff2a00?text=STOCKMARKET' },
+                { title: 'Problem Solving', description: 'Identifying and resolving complex issues.', thumbnail: 'https://placehold.co/600x400/121212/ff5e00?text=PROBLEM+SOLVING' },
+                { title: 'Sales', description: 'Persuading and converting leads into customers.', thumbnail: 'https://placehold.co/600x400/121212/ff9d00?text=SALES' },
+                { title: 'Networking', description: 'Building and leveraging professional connections.', thumbnail: 'https://placehold.co/600x400/121212/ff2a00?text=NETWORKING' },
+                { title: 'Leadership', description: 'Guiding and motivating teams towards goals.', thumbnail: 'https://placehold.co/600x400/121212/ff5e00?text=LEADERSHIP' },
+                { title: 'Emotional Intelligence', description: 'Understanding and managing emotions effectively.', thumbnail: 'https://placehold.co/600x400/121212/ff9d00?text=EMOTIONAL+INTELLIGENCE' },
+                { title: 'Legalities and Law', description: 'Basic understanding of relevant legal principles.', thumbnail: 'https://placehold.co/600x400/121212/ff2a00?text=LEGALITIES+LAW' },
+                { title: 'Banking', description: 'Knowledge of financial systems and personal finance.', thumbnail: 'https://placehold.co/600x400/121212/ff5e00?text=BANKING' },
+                { title: 'Creativity', description: 'Generating new and innovative ideas.', thumbnail: 'https://placehold.co/600x400/121212/ff9d00?text=CREATIVITY' },
+            ],
         };
 
         // DOM elements
@@ -822,7 +846,7 @@
         // Tabs that are considered "routines" and should have progress tracking
         // Removed 'vault' from routineTabs as per user's request.
         // 'mathematics' is not a routine tab, so it's not included here.
-        // 'semesterGoals' is also not considered a routine tab for progress tracking.
+        // 'semesterGoals' and 'skills' are also not considered routine tabs for progress tracking.
         const routineTabs = ['morning', 'polaris', 'evening', 'commitments', 'neverDo', 'mustDo'];
 
         // Store checked states for each tab's items and the last visit date using localStorage
@@ -941,7 +965,7 @@
             // Determine if the completion button should be shown.
             // It should only be shown for routine tiles that are not yet checked, and have video/context/details.
             // Adrenaline Vault videos should NOT show the completion button.
-            // Mathematics tab tiles and Semester Goals tiles should also NOT show the completion button as they are informational.
+            // Mathematics tab tiles, Semester Goals tiles and Skills tab tiles should also NOT show the completion button as they are informational.
             const showCompletionButton = isRoutineTile && !isCurrentlyChecked && (tileData.videoUrl || tileData.contextItems || tileData.details);
 
             if (isRoutineTile) {
@@ -1007,7 +1031,7 @@
                     taskCheckSound.play(); // Play sound when task is checked
                 }
             } else {
-                // This is a non-routine tab (like 'vault', 'lesson', 'quote', 'goal', 'mathematics', 'semesterGoals'), open a modal with the content (no check-in logic)
+                // This is a non-routine tab (like 'vault', 'lesson', 'quote', 'goal', 'mathematics', 'semesterGoals', 'skills'), open a modal with the content (no check-in logic)
                 let modalHtml = '';
                 let modalTitle = tileData.title; // Set modal title to tile's title
 
@@ -1030,7 +1054,7 @@
                     `;
                 } else if (tileData.details) {
                     modalHtml = `<p class="text-lg opacity-90">${tileData.details}</p>`;
-                } else if (tileData.contextItems) { // For semesterGoals (and morning/evening context items)
+                } else if (tileData.contextItems) { // For semesterGoals, skills (and morning/evening context items)
                     modalHtml = `
                         <ul class="list-disc list-inside text-left text-lg space-y-2">
                             ${tileData.contextItems.map(item => `<li>${item}</li>`).join('')}
@@ -1039,7 +1063,7 @@
                 } else {
                     modalHtml = `<p class="text-lg opacity-90">${tileData.description}</p>`;
                 }
-                // For non-routine tabs (including 'mathematics' and 'semesterGoals'), showCompletionButton is always false
+                // For non-routine tabs (including 'mathematics', 'semesterGoals', 'skills'), showCompletionButton is always false
                 openModal(modalTitle, modalHtml, false, clickedTabName, clickedIndex);
             }
         }
@@ -1081,10 +1105,10 @@
                 contentContainer.innerHTML = htmlContent;
 
                 // Set the correct grid layout for all tabs, or a single column for special tabs
-                // 'mathematics' tab and 'semesterGoals' tab should also use a multi-column grid as they have multiple tiles.
+                // 'mathematics' tab, 'semesterGoals' tab and 'skills' tab should also use a multi-column grid as they have multiple tiles.
                 if (['lesson', 'quote', 'goal'].includes(tabName)) { // These are single-tile tabs
                     contentContainer.className = 'w-full max-w-6xl content-container grid grid-cols-1 gap-8 fade-in';
-                } else { // All other tabs, including 'mathematics' and 'semesterGoals', use multi-column grid
+                } else { // All other tabs, including 'mathematics', 'semesterGoals', and 'skills', use multi-column grid
                      contentContainer.className = 'w-full max-w-6xl content-container grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 fade-in';
                 }
                 
@@ -1469,7 +1493,7 @@
                     // Call fetchAndSetDailyVideoContent without a specific query, it will pick one randomly
                     await fetchAndSetDailyVideoContent('lesson');
                 }
-                // Mathematics and Semester Goals tabs do not require dynamic content fetching.
+                // Mathematics, Semester Goals, and Skills tabs do not require dynamic content fetching.
             });
         });
 
