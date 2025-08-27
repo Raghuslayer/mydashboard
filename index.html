@@ -567,9 +567,10 @@
                 <button class="tab px-4 py-2 whitespace-nowrap" data-tab="semesterGoals">Semester Goals <span class="progress-dot"></span></button>
                 <button class="tab px-4 py-2 whitespace-nowrap" data-tab="skills">Skills I Need to Get a Grip <span class="progress-dot"></span></button>
                 <button class="tab px-4 py-2 whitespace-nowrap" data-tab="history">Progress History</button> <!-- New History Tab -->
+                <button class="tab px-4 py-2 whitespace-nowrap" data-tab="skillMap">Skill Map</button>
             </div>
         </nav>
-        <!--------------------------------->
+
 
         <main id="content-container" class="w-full max-w-6xl content-container grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 fade-in">
         </main>
@@ -920,8 +921,47 @@
             // New History Tab (content will be dynamically generated)
             history: [
                 { title: 'Loading History...', description: 'Fetching your past progress data.', type: 'loading' }
-            ]
-        };
+            ],
+            
+            skillMap: [
+            {
+                title: 'Daily',
+                description: 'Skills to practice every day',
+                items: [
+                    'Critical Thinking',
+                    'Problem Solving',
+                    'Creativity',
+                    'Communication',
+                    'Emotional Intelligence'
+                ]
+            },
+            {
+                title: 'First Year',
+                description: 'Hard but must-do skills in first year',
+                items: [
+                    'Math',
+                    'Coding',
+                    'Stock Market',
+                    'Video Editing',
+                    'Content Creation',
+                    'Story Telling'
+                ]
+            },
+            {
+                title: 'Remaining (After 1st Year)',
+                description: 'Skills to focus on after year one',
+                items: [
+                    'Negotiating',
+                    'Sales',
+                    'Leadership',
+                    'Networking',
+                    'Banking Knowledge',
+                    'Legalities'
+                ]
+            }
+        ],
+    };
+
 
         // DOM elements
         const tabs = document.querySelectorAll('.tab');
@@ -1305,7 +1345,25 @@
                 
                 const content = tabContent[tabName] || [];
                 let htmlContent = '';
+                
+                
+                if (tabName === 'skillMap') {
+    const groups = tabContent.skillMap;
+    contentContainer.className =
+        'w-full max-w-6xl content-container grid grid-cols-1 md:grid-cols-3 gap-8 fade-in';
+    contentContainer.innerHTML = groups.map(group => `
+        <div class="tile p-6 flex flex-col">
+            <h3 class="text-2xl font-bold font-['Teko'] mb-2">${group.title}</h3>
+            <p class="text-sm opacity-80 mb-3">${group.description}</p>
+            <ul class="list-disc list-inside space-y-1 text-sm">
+                ${group.items.map(item => `<li>${item}</li>`).join('')}
+            </ul>
+        </div>
+    `).join('');
+    return; // stop here so rest of updateContent doesn't run
+}
 
+                
                 // Handle 'history' tab content specially
                 if (tabName === 'history') {
                     // Sort historyData by date descending
