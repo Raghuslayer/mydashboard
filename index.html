@@ -91,6 +91,11 @@
             
         }
 
+        .sticky-tabs {
+  position: sticky;
+  top: 0;
+  z-index: 50; /* Adjust as needed to ensure it stays above other content */
+}
 
 
         .tab:hover {
@@ -553,7 +558,7 @@
         </header>
 
         <!-- Updated Navigation Section -->
-        <nav class="w-full max-w-6xl overflow-x-auto p-2 mb-8 bg-black bg-opacity-40 rounded-full backdrop-blur-md hide-scrollbar">
+        <nav class="sticky-tabs w-full max-w-6xl overflow-x-auto p-2 mb-8 bg-black bg-opacity-40 rounded-full backdrop-blur-md hide-scrollbar">
             <div class="flex flex-nowrap space-x-2 md:space-x-4">
                 <button class="tab px-4 py-2 whitespace-nowrap active" data-tab="morning">Morning Routine <span class="progress-dot"></span></button>
                 <button class="tab px-4 py-2 whitespace-nowrap" data-tab="polaris">Polaris Routine <span class="progress-dot"></span></button>
@@ -1943,6 +1948,7 @@
     </script>
 </body>
 </html>
+
 
 
 
