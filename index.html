@@ -80,7 +80,7 @@
 
         /* Tab Styles */
         .tab {
-            position: relative;
+            position: sticky;
             font-family: 'Bebas Neue', sans-serif;
             font-size: 1.25rem;
             letter-spacing: 0.05em;
@@ -89,14 +89,12 @@
             border-bottom: 2px solid transparent;
             text-shadow: 0 0 5px rgba(255, 255, 255, 0.2);
             position: relative;
+            top: 0;              /* distance from top */
+            background: white;   /* give background to cover content under it */
+            z-index: 1000;       /* keeps it above other elements */
             
         }
-        .tab-bar {
-  position: sticky;
-  top: 0;              /* distance from top */
-  background: white;   /* give background to cover content under it */
-  z-index: 1000;       /* keeps it above other elements */
-}
+
 
 
         .tab:hover {
@@ -1949,6 +1947,7 @@
     </script>
 </body>
 </html>
+
 
 
 
