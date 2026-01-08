@@ -21,8 +21,10 @@ export function DataProvider({ children }) {
     const [matrixTasks, setMatrixTasks] = useState([]);
     const [historyData, setHistoryData] = useState([]);
     const [semesterGoals, setSemesterGoals] = useState([]); // New state for goals
+    const [semesterGoals, setSemesterGoals] = useState([]); // New state for goals
     const [dailyLesson, setDailyLesson] = useState(null);
     const [dailyQuote, setDailyQuote] = useState(null);
+    const [dailyAnalysis, setDailyAnalysis] = useState(null); // Cached AI analysis
     const [loadingData, setLoadingData] = useState(true);
 
     // IMPORTANT: Use 'default-app-id' to match the original HTML dashboard's Firebase path
@@ -65,6 +67,10 @@ export function DataProvider({ children }) {
 
     const saveDailyQuote = async (uid, date, quote) => {
         await setDoc(doc(db, `artifacts/${getAppId()}/users/${uid}/daily_content`, date), { quote }, { merge: true });
+    };
+
+    const saveDailyAnalysis = async (uid, date, analysis) => {
+        await setDoc(doc(db, `artifacts/${getAppId()}/users/${uid}/daily_content`, date), { analysis }, { merge: true });
     };
 
     // ===== LOAD DATA =====
@@ -134,6 +140,7 @@ export function DataProvider({ children }) {
                     const data = contentSnap.data();
                     if (data.lesson) setDailyLesson(data.lesson);
                     if (data.quote) setDailyQuote(data.quote);
+                    if (data.analysis) setDailyAnalysis(data.analysis);
                 }
 
             } catch (err) {
@@ -318,6 +325,14 @@ export function DataProvider({ children }) {
             if (currentUser) {
                 const today = new Date().toISOString().split('T')[0];
                 saveDailyQuote(currentUser.uid, today, quote);
+            }
+        },
+        dailyAnalysis,
+        setDailyAnalysis: (analysis) => {
+            setDailyAnalysis(analysis);
+            if (currentUser) {
+                const today = new Date().toISOString().split('T')[0];
+                saveDailyAnalysis(currentUser.uid, today, analysis);
             }
         },
     };

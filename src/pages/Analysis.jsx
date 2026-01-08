@@ -32,12 +32,12 @@ ChartJS.register(
 );
 
 export default function Analysis() {
-    const { historyData } = useData();
+    const { historyData, dailyAnalysis, setDailyAnalysis } = useData();
     const [selectedMonth, setSelectedMonth] = useState('current');
 
     // AI Modal State
     const [isAiModalOpen, setIsAiModalOpen] = useState(false);
-    const [aiAnalysis, setAiAnalysis] = useState('');
+    // Removed local aiAnalysis state in favor of context
     const [loadingAi, setLoadingAi] = useState(false);
 
     // Psychology tips based on performance
@@ -272,8 +272,14 @@ export default function Analysis() {
     const randomTip = psychologyTips[Math.floor(Math.random() * psychologyTips.length)];
 
     const handleGetAiInsights = async () => {
-        setLoadingAi(true);
         setIsAiModalOpen(true);
+
+        // Use cached analysis if available (Smart API Usage)
+        if (dailyAnalysis && !dailyAnalysis.includes("Error")) {
+            return;
+        }
+
+        setLoadingAi(true);
         try {
             // Get last 7 days of history
             const recentHistory = historyData
@@ -281,9 +287,9 @@ export default function Analysis() {
                 .slice(0, 7);
 
             const analysis = await getHabitAnalysis(currentStats, recentHistory);
-            setAiAnalysis(analysis);
+            setDailyAnalysis(analysis);
         } catch (error) {
-            setAiAnalysis("The Oracle is silent today. (API Error: Check connection or limits)");
+            setDailyAnalysis("The Oracle is silent today. (API Error: Check connection or limits)");
         } finally {
             setLoadingAi(false);
         }
@@ -448,10 +454,10 @@ export default function Analysis() {
                     </div>
                 ) : (
                     <div className="text-gray-200 leading-relaxed space-y-4 whitespace-pre-line text-lg">
-                        {aiAnalysis ? (
+                        {dailyAnalysis ? (
                             <div className="bg-white/5 p-6 rounded-xl border border-white/10">
                                 <FontAwesomeIcon icon={faWandMagicSparkles} className="text-indigo-400 text-2xl mb-4" />
-                                <div>{aiAnalysis}</div>
+                                <div>{dailyAnalysis}</div>
                             </div>
                         ) : (
                             <p>No analysis available.</p>
