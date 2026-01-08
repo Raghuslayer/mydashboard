@@ -159,20 +159,7 @@ export const staticData = {
         { title: 'First Year', description: 'Hard but must-do skills in first year', items: ['Math', 'Coding', 'Stock Market', 'Video Editing', 'Content Creation', 'Story Telling'] },
         { title: 'Remaining (After 1st Year)', description: 'Skills to focus on after year one', items: ['Negotiating', 'Sales', 'Leadership', 'Networking', 'Banking Knowledge', 'Legalities'] }
     ],
-    semesterGoals: [
-        {
-            title: 'Sem1',
-            description: 'View your Semester 1 Goals and Challenges.',
-            thumbnail: 'https://placehold.co/600x400/9D0000/FF2A00?text=SEMESTER+GOALS',
-            contextItems: [
-                'Video Editing-make 20videos on 20topics',
-                'n8n',
-                'Content and Story Making on a topic',
-                'Become Fit',
-                'MERN Stack'
-            ], icon: 'faGraduationCap'
-        }
-    ],
+    // semesterGoals removed - managed via Firebase
 };
 
 // Routine tabs are ones where tasks can be checked off
@@ -197,6 +184,6 @@ export const tabList = [
     { id: 'mustDo', label: 'Must Do', icon: 'faCircleCheck' },
     { id: 'skills', label: 'Skills List', icon: 'faToolbox' },
     { id: 'skillMap', label: 'Skill Map', icon: 'faSitemap' },
-    { id: 'semesterGoals', label: 'Sem Goals', icon: 'faGraduationCap' },
+    { id: 'semesterGoals', label: 'Semester Goals', icon: 'faGraduationCap' },
     { id: 'goal', label: 'Main Goal', icon: 'faBullseye' },
 ];
