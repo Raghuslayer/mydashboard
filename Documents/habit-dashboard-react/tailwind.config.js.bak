@@ -1,0 +1,23 @@
+/** @type {import('tailwindcss').Config} */
+export default {
+  content: [
+    "./index.html",
+    "./src/**/*.{js,ts,jsx,tsx}",
+  ],
+  theme: {
+    extend: {
+      colors: {
+        'fire-red': '#ff2a00',
+        'fire-orange': '#ff5e00',
+        'fire-yellow': '#ff9d00',
+        'glass-bg': 'rgba(18, 18, 18, 0.65)',
+      },
+      fontFamily: {
+        'header': ['Teko', 'sans-serif'],
+        'accent': ['Bebas Neue', 'sans-serif'],
+        'body': ['Inter', 'sans-serif'],
+      },
+    },
+  },
+  plugins: [],
+}
