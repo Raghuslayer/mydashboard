@@ -20,6 +20,7 @@ export function DataProvider({ children }) {
     const [journalEntries, setJournalEntries] = useState([]);
     const [matrixTasks, setMatrixTasks] = useState([]);
     const [historyData, setHistoryData] = useState([]);
+    const [semesterGoals, setSemesterGoals] = useState([]); // New state for goals
     const [dailyLesson, setDailyLesson] = useState(null);
     const [dailyQuote, setDailyQuote] = useState(null);
     const [loadingData, setLoadingData] = useState(true);
@@ -52,6 +53,10 @@ export function DataProvider({ children }) {
 
     const saveGoal = useCallback(debounce(async (uid, goal) => {
         await setDoc(doc(db, `artifacts/${getAppId()}/users/${uid}/user_data`, 'main_goal'), { goal }, { merge: true });
+    }, 1000), []);
+
+    const saveSemesterGoals = useCallback(debounce(async (uid, goals) => {
+        await setDoc(doc(db, `artifacts/${getAppId()}/users/${uid}/user_data`, 'semester_goals'), { goals }, { merge: true });
     }, 1000), []);
 
     const saveDailyLesson = async (uid, date, lesson) => {
@@ -113,7 +118,17 @@ export function DataProvider({ children }) {
                 history.sort((a, b) => new Date(a.date) - new Date(b.date));
                 setHistoryData(history);
 
-                // 8. Daily Lesson & Quote Cache (for today only)
+                // 8. Semester Goals (Load from DB or fallback to static if empty)
+                const sgSnap = await getDoc(doc(db, `artifacts/${appId}/users/${uid}/user_data`, 'semester_goals'));
+                if (sgSnap.exists()) {
+                    setSemesterGoals(sgSnap.data().goals || []);
+                } else {
+                    // Fallback to static data for first-time load (optional)
+                    // Or start empty. Let's start empty to let user add their own.
+                    setSemesterGoals([]);
+                }
+
+                // 9. Daily Lesson & Quote Cache (for today only)
                 const contentSnap = await getDoc(doc(db, `artifacts/${appId}/users/${uid}/daily_content`, today));
                 if (contentSnap.exists()) {
                     const data = contentSnap.data();
@@ -239,13 +254,41 @@ export function DataProvider({ children }) {
         if (currentUser) saveGoal(currentUser.uid, newGoal);
     }
 
+    // Semester Goals CRUD
+    function addSemesterGoal(goalData) { // { title, description, ... }
+        const newGoal = { id: crypto.randomUUID(), ...goalData, createdAt: Date.now() };
+        setSemesterGoals(prev => {
+            const newState = [...prev, newGoal];
+            if (currentUser) saveSemesterGoals(currentUser.uid, newState);
+            return newState;
+        });
+    }
+
+    function updateSemesterGoal(id, updatedData) {
+        setSemesterGoals(prev => {
+            const newState = prev.map(g => g.id === id ? { ...g, ...updatedData } : g);
+            if (currentUser) saveSemesterGoals(currentUser.uid, newState);
+            return newState;
+        });
+    }
+
+    function deleteSemesterGoal(id) {
+        setSemesterGoals(prev => {
+            const newState = prev.filter(g => g.id !== id);
+            if (currentUser) saveSemesterGoals(currentUser.uid, newState);
+            return newState;
+        });
+    }
+
     const value = {
         userData,
         checkedStates,
         dailyTasks,
         journalEntries,
         matrixTasks,
+        matrixTasks,
         historyData,
+        semesterGoals, // Export new state
         loadingData,
         addXP,
         toggleRoutineTask,
@@ -256,7 +299,11 @@ export function DataProvider({ children }) {
         addMatrixTask,
         toggleMatrixTask,
         deleteMatrixTask,
+        deleteMatrixTask,
         updateGoal,
+        addSemesterGoal,    // Export new functions
+        updateSemesterGoal,
+        deleteSemesterGoal,
         dailyLesson,
         dailyQuote,
         setDailyLesson: (lesson) => {

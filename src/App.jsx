@@ -13,6 +13,7 @@ import Tasks from './pages/Tasks';
 import DynamicLesson from './pages/DynamicLesson';
 import DynamicQuote from './pages/DynamicQuote';
 import History from './pages/History';
+import SemesterGoals from './pages/SemesterGoals';
 
 function App() {
   return (
@@ -34,6 +35,7 @@ function App() {
         <Route path="lesson" element={<DynamicLesson />} />
         <Route path="quote" element={<DynamicQuote />} />
         <Route path="history" element={<History />} />
+        <Route path="semesterGoals" element={<SemesterGoals />} />
         {/* Dynamic route for all other tabs (morning, night, deepWork, etc) */}
         <Route path=":tabId" element={<DashboardContent />} />
       </Route>
