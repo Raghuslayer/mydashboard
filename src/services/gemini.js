@@ -13,7 +13,8 @@ async function fetchWithRetry(url, options, retries = 3, delay = 1000) {
                     throw new Error(`Rate limit exceeded. Retrying...`);
                 }
                 const errorData = await response.json().catch(() => ({}));
-                throw new Error(errorData.error?.message || `HTTP Error: ${response.status}`);
+                const backendMsg = typeof errorData.error === 'string' ? errorData.error : errorData.error?.message;
+                throw new Error(backendMsg || `HTTP Error: ${response.status}`);
             }
             return response;
         } catch (error) {
