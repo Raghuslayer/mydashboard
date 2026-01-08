@@ -15,7 +15,7 @@ export default async function handler(request, response) {
 
     const { prompt, systemInstruction } = request.body || {};
     const apiKey = process.env.GEMINI_API_KEY;
-    const model = "gemini-2.5-flash-preview-09-2025";
+    const model = "gemini-2.5-flash";
 
     if (!apiKey) {
         return response.status(500).json({ error: 'Server configuration error: Missing API Key' });
