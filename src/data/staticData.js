@@ -13,7 +13,7 @@ export const staticData = {
         { title: 'Bhagavad Gita Reading', description: '2 pages / 10 min for spiritual growth.', thumbnail: 'https://placehold.co/600x400/5E0000/FF9D00?text=BHAGAVAD+GITA' },
         { title: 'Post-Workout Meal', description: '15 min to refuel.', thumbnail: 'https://placehold.co/600x400/9D0000/FF2A00?text=POST-WORKOUT', contextItems: ['Whey protein', '2 eggs', 'Pumpkin seeds', 'Green gram and menthulu (all soaked)', 'Groundnuts (all soaked)'] },
         { title: 'Coding (Deep Focus)', description: '1 hr dedicated coding session.', thumbnail: 'https://placehold.co/600x400/2A0000/FF5E00?text=DEEP+CODING' },
-        { title: 'Polaris Prep', description: '15 min to plan your main tasks.', thumbnail: 'https://placehold.co/600x400/5E0000/FF9D00?text=POLARIS+PREP' },
+        { title: 'College Prep', description: '15 min to plan your main tasks.', thumbnail: 'https://placehold.co/600x400/5E0000/FF9D00?text=COLLEGE+PREP' },
     ],
     deepWork: [
         { title: 'Classes', description: 'Full focus, diligent note-taking.', thumbnail: 'https://placehold.co/600x400/9D0000/FF2A00?text=CLASSES' },

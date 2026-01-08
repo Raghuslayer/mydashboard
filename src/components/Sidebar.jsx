@@ -83,7 +83,7 @@ function SidebarContent({ onLogout, onClose, isMobile, level }) {
                     <h1 className="header-font text-3xl md:text-4xl text-transparent bg-clip-text bg-gradient-to-r from-fire-yellow to-fire-red leading-tight">
                         HABIT<br />DASHBOARD
                     </h1>
-                    <p className="text-[10px] text-gray-500 uppercase tracking-widest mt-1">Level {level} • Polaris v2.0</p>
+                    <p className="text-[10px] text-gray-500 uppercase tracking-widest mt-1">Level {level} • Dashboard v2.0</p>
                 </div>
                 {isMobile && (
                     <button onClick={onClose} className="text-gray-400 hover:text-white">
