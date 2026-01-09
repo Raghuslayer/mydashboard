@@ -138,7 +138,7 @@ export default function Analysis() {
                     daysTracked: month.days.length,
                     bestDay: sortedDays.reduce((a, b) => (a.completed > b.completed ? a : b), {}),
                     worstDays,
-                    consistencyScore,
+                    consistencyScore: Number.isFinite(consistencyScore) ? consistencyScore : 0,
                     totalMissedDays
                 };
             });
@@ -203,6 +203,7 @@ export default function Analysis() {
             // Lower StdDev relative to mean is better. 
             // Simple robust linear map: 0 stdDev -> 100, High stdDev -> Lower score
             const consistencyScore = Math.max(0, Math.round(100 - (stdDev * 5)));
+            const finalConsistencyScore = Number.isFinite(consistencyScore) ? consistencyScore : 0;
 
             // Streak
             let streak = 0;
@@ -233,7 +234,8 @@ export default function Analysis() {
                 maxStreak,
                 bestDay,
                 worstDays,
-                consistencyScore,
+                worstDays,
+                consistencyScore: finalConsistencyScore,
                 totalMissedDays
             };
         }
@@ -350,8 +352,20 @@ export default function Analysis() {
                     borderWidth: 2,
                     tension: 0.3,
                     fill: true,
-                    pointBackgroundColor: '#ff9d00',
-                    pointBorderColor: '#ff9d00',
+                    // Dynamic coloring for points
+                    pointBackgroundColor: (context) => {
+                        const val = context.raw;
+                        // Assuming 0 or very low means "needs improvement"
+                        if (val === 0) return '#ef4444'; // Red
+                        if (val === chartData.maxTotal) return '#22c55e'; // Green
+                        return '#ff9d00'; // Default Orange
+                    },
+                    pointBorderColor: (context) => {
+                        const val = context.raw;
+                        if (val === 0) return '#ef4444';
+                        if (val === chartData.maxTotal) return '#22c55e';
+                        return '#ff9d00';
+                    },
                     pointRadius: 4,
                     pointHoverRadius: 6,
                 }
@@ -515,7 +529,7 @@ export default function Analysis() {
                     <div>
                         <p className="text-indigo-400 text-xs uppercase tracking-wider mb-1">Consistency Score</p>
                         <div className="flex items-end gap-2">
-                            <h4 className="header-font text-4xl text-white">{stats.consistencyScore || 'N/A'}</h4>
+                            <h4 className="header-font text-4xl text-white">{stats.consistencyScore ?? 'N/A'}</h4>
                             <span className="text-gray-400 text-sm mb-1">/ 100</span>
                         </div>
                     </div>
