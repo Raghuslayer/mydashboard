@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { useData } from '../contexts/DataProvider';
 import Modal from '../components/Modal';
 import { getHabitAnalysis } from '../services/gemini';
+import { staticData, routineTabs } from '../data/staticData';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
     faCalendarCheck, faCalendarXmark, faLightbulb, faCalendarDays, faRobot, faWandMagicSparkles
@@ -32,7 +33,7 @@ ChartJS.register(
 );
 
 export default function Analysis() {
-    const { historyData, dailyAnalysis, setDailyAnalysis, checkedStates } = useData();
+    const { historyData, dailyAnalysis, setDailyAnalysis, checkedStates, dailyTasks } = useData();
     const [selectedMonth, setSelectedMonth] = useState('current');
 
     // AI Modal State
@@ -157,16 +158,26 @@ export default function Analysis() {
             return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
         };
 
-        // Calculate today's completed count from checkedStates (live data)
+        // Calculate today's completed count using same logic as StatsBar
         let todayCompleted = 0;
-        if (checkedStates && typeof checkedStates === 'object') {
-            Object.values(checkedStates).forEach(tabState => {
-                if (Array.isArray(tabState)) {
-                    todayCompleted += tabState.filter(Boolean).length;
-                } else if (typeof tabState === 'object' && tabState !== null) {
-                    todayCompleted += Object.values(tabState).filter(Boolean).length;
+
+        // Count routine tasks from all tabs
+        if (Array.isArray(routineTabs)) {
+            routineTabs.forEach(tabId => {
+                const items = staticData?.[tabId];
+                if (Array.isArray(items)) {
+                    const rawStates = checkedStates?.[tabId];
+                    const states = Array.isArray(rawStates)
+                        ? rawStates
+                        : Object.values(rawStates || {});
+                    todayCompleted += states.filter(Boolean).length;
                 }
             });
+        }
+
+        // Also count completed daily tasks
+        if (Array.isArray(dailyTasks)) {
+            todayCompleted += dailyTasks.filter(t => t?.done).length;
         }
 
         // Create a map of date -> data for quick lookup
@@ -240,7 +251,7 @@ export default function Analysis() {
                 }
             ]
         };
-    }, [selectedMonth, historyData, checkedStates]);
+    }, [selectedMonth, historyData, checkedStates, dailyTasks]);
 
     // Chart options - use useMemo to update when chartData changes
     const chartOptions = useMemo(() => ({
