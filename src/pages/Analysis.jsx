@@ -147,17 +147,20 @@ export default function Analysis() {
     // Get chart data for selected month - show ALL days on x-axis
     const chartData = useMemo(() => {
         const today = new Date();
+        today.setHours(23, 59, 59, 999); // End of today for comparisons
         let maxTotal = 0;
 
-        // Helper to format date as YYYY-MM-DD for lookup
+        // Helper to format any date to YYYY-MM-DD string
         const formatDateKey = (d) => {
-            return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+            const date = new Date(d);
+            return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
         };
 
         // Create a map of date -> data for quick lookup
         const dataMap = {};
         historyData.forEach(day => {
-            const dateKey = day.date.split('T')[0]; // Normalize to YYYY-MM-DD
+            // Parse day.date robustly - it could be YYYY-MM-DD or ISO string or other format
+            const dateKey = formatDateKey(day.date);
             dataMap[dateKey] = day;
             if ((day.total || 0) > maxTotal) maxTotal = day.total || 0;
         });
@@ -167,20 +170,26 @@ export default function Analysis() {
         let allDays = [];
 
         if (selectedMonth === 'current') {
-            // Last 30 days including today
+            // Last 30 days including today (only past/present, no future)
             for (let i = 29; i >= 0; i--) {
-                const d = new Date(today);
-                d.setDate(today.getDate() - i);
+                const d = new Date();
+                d.setDate(d.getDate() - i);
                 d.setHours(0, 0, 0, 0);
                 allDays.push(d);
             }
         } else {
-            // Selected month: "YYYY-MM" - generate all days of that month
+            // Selected month: "YYYY-MM" - generate days up to today (or end of month if past)
             const [targetYear, targetMonth] = selectedMonth.split('-').map(Number);
             const daysInMonth = new Date(targetYear, targetMonth, 0).getDate();
+            const todayNormalized = new Date();
+            todayNormalized.setHours(23, 59, 59, 999);
 
             for (let day = 1; day <= daysInMonth; day++) {
-                allDays.push(new Date(targetYear, targetMonth - 1, day));
+                const d = new Date(targetYear, targetMonth - 1, day);
+                // Only include days up to today (no future dates)
+                if (d <= todayNormalized) {
+                    allDays.push(d);
+                }
             }
         }
 
