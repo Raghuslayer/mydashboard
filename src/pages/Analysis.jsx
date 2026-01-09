@@ -529,7 +529,7 @@ export default function Analysis() {
                     <div>
                         <p className="text-indigo-400 text-xs uppercase tracking-wider mb-1">Consistency Score</p>
                         <div className="flex items-end gap-2">
-                            <h4 className="header-font text-4xl text-white">{stats.consistencyScore ?? 'N/A'}</h4>
+                            <h4 className="header-font text-3xl md:text-4xl text-white">{stats.consistencyScore ?? 'N/A'}</h4>
                             <span className="text-gray-400 text-sm mb-1">/ 100</span>
                         </div>
                     </div>

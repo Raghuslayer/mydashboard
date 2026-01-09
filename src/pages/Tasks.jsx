@@ -235,14 +235,17 @@ export default function Tasks() {
                 </div>
 
                 {/* Add Task */}
-                <div className="flex gap-3 mb-4">
-                    <input type="text" value={newTask} onChange={(e) => setNewTask(e.target.value)} onKeyPress={handleKeyPress} placeholder="Add a task..." className="flex-1 bg-white/5 border border-white/10 text-white rounded-xl px-4 py-3 focus:border-fire-orange focus:outline-none placeholder-gray-500" />
-                    <button onClick={handleAdd} disabled={!newTask.trim()} className="bg-green-600 hover:bg-green-500 disabled:opacity-50 px-5 rounded-xl text-white flex items-center gap-2 font-medium">
-                        <FontAwesomeIcon icon={faPlus} /> Add
-                    </button>
-                    <button onClick={clearCompletedDailyTasks} disabled={completed === 0} className="bg-white/5 hover:bg-white/10 disabled:opacity-30 px-4 rounded-lg text-gray-300 flex items-center gap-2 text-sm">
-                        <FontAwesomeIcon icon={faCheckDouble} />
-                    </button>
+                {/* Add Task */}
+                <div className="flex flex-col sm:flex-row gap-3 mb-4">
+                    <input type="text" value={newTask} onChange={(e) => setNewTask(e.target.value)} onKeyPress={handleKeyPress} placeholder="Add a task..." className="flex-1 bg-white/5 border border-white/10 text-white rounded-xl px-4 py-3 focus:border-fire-orange focus:outline-none placeholder-gray-500 w-full" />
+                    <div className="flex gap-3">
+                        <button onClick={handleAdd} disabled={!newTask.trim()} className="flex-1 sm:flex-none bg-green-600 hover:bg-green-500 disabled:opacity-50 px-5 py-3 sm:py-0 rounded-xl text-white flex items-center justify-center gap-2 font-medium">
+                            <FontAwesomeIcon icon={faPlus} /> Add
+                        </button>
+                        <button onClick={clearCompletedDailyTasks} disabled={completed === 0} className="bg-white/5 hover:bg-white/10 disabled:opacity-30 px-4 py-3 sm:py-0 rounded-lg text-gray-300 flex items-center justify-center gap-2 text-sm">
+                            <FontAwesomeIcon icon={faCheckDouble} />
+                        </button>
+                    </div>
                 </div>
 
                 {/* Task List */}
@@ -307,20 +310,20 @@ export default function Tasks() {
                             <div className="space-y-3">
                                 {monthlyAnalytics.map((month) => (
                                     <div key={month.key} className={`border rounded-xl overflow-hidden transition-all ${selectedMonth === month.key ? 'border-green-500/50 bg-green-900/10' : 'border-white/10'}`}>
-                                        <button onClick={() => setSelectedMonth(selectedMonth === month.key ? null : month.key)} className="w-full flex items-center justify-between p-4 bg-white/5 hover:bg-white/10 transition-colors text-left">
-                                            <div className="flex items-center gap-4">
+                                        <button onClick={() => setSelectedMonth(selectedMonth === month.key ? null : month.key)} className="w-full flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 bg-white/5 hover:bg-white/10 transition-colors text-left gap-3">
+                                            <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 w-full">
                                                 <span className="header-font text-lg text-white">{month.name}</span>
-                                                <div className="flex gap-2 text-xs">
+                                                <div className="flex flex-wrap gap-2 text-xs">
                                                     <span className={`font-bold px-2 py-1 rounded ${month.avgPercent >= 80 ? 'bg-green-500/20 text-green-400' : month.avgPercent >= 50 ? 'bg-yellow-500/20 text-yellow-400' : 'bg-red-500/20 text-red-400'}`}>
                                                         {month.avgPercent}% avg
                                                     </span>
-                                                    <span className="bg-blue-500/20 text-blue-300 px-2 py-1 rounded">
+                                                    <span className="bg-blue-500/20 text-blue-300 px-2 py-1 rounded whitespace-nowrap">
                                                         C-Score: {month.consistencyScore}
                                                     </span>
+                                                    {month.perfectDays > 0 && <span className="text-xs text-green-400 flex items-center gap-1"><FontAwesomeIcon icon={faTrophy} /> {month.perfectDays}</span>}
                                                 </div>
-                                                {month.perfectDays > 0 && <span className="text-xs text-green-400"><FontAwesomeIcon icon={faTrophy} /> {month.perfectDays}</span>}
                                             </div>
-                                            <FontAwesomeIcon icon={selectedMonth === month.key ? faChevronUp : faChevronDown} className="text-gray-400" />
+                                            <FontAwesomeIcon icon={selectedMonth === month.key ? faChevronUp : faChevronDown} className="text-gray-400 hidden sm:block" />
                                         </button>
 
                                         {selectedMonth === month.key && (
