@@ -10,7 +10,6 @@ import Analysis from './pages/Analysis';
 import SkillMap from './pages/SkillMap';
 import Goal from './pages/Goal';
 import Tasks from './pages/Tasks';
-import DynamicLesson from './pages/DynamicLesson';
 import DynamicQuote from './pages/DynamicQuote';
 import History from './pages/History';
 import SemesterGoals from './pages/SemesterGoals';
@@ -32,7 +31,6 @@ function App() {
         <Route path="skillMap" element={<SkillMap />} />
         <Route path="goal" element={<Goal />} />
         <Route path="tasks" element={<Tasks />} />
-        <Route path="lesson" element={<DynamicLesson />} />
         <Route path="quote" element={<DynamicQuote />} />
         <Route path="history" element={<History />} />
         <Route path="semesterGoals" element={<SemesterGoals />} />

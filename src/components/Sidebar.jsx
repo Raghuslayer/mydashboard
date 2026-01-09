@@ -49,8 +49,7 @@ const sidebarGroups = [
         label: 'Inspiration',
         icon: faLightbulb,
         items: [
-            { id: 'lesson', label: 'Daily Lesson', icon: 'faYoutube' },
-            { id: 'quote', label: 'Stoic Quote', icon: 'faQuoteRight' },
+            { id: 'quote', label: 'Daily Wisdom', icon: 'faQuoteRight' },
             { id: 'vault', label: 'Motivation Vault', icon: 'faFilm' },
         ]
     },
