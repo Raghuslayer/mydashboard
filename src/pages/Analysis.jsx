@@ -112,6 +112,22 @@ export default function Analysis() {
                     })
                     .slice(0, 2);
 
+                // Calculate Scientific Metrics for Archives
+                const [year, monthNum] = month.key.split('-').map(Number);
+                const daysInMonth = new Date(year, monthNum, 0).getDate();
+
+                // Assume missing days are 0 completion (or just days not logged yet)
+                // For past months, missing records usually mean no activity
+                const totalMissedDays = Math.max(0, daysInMonth - month.days.length);
+
+                // Consistency Score (Standard Deviation)
+                // We must include the "0" days in the variation calculation for accuracy
+                const allCompletedCounts = [...month.completed, ...Array(totalMissedDays).fill(0)];
+                const mean = allCompletedCounts.reduce((a, b) => a + b, 0) / allCompletedCounts.length;
+                const variance = allCompletedCounts.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / allCompletedCounts.length;
+                const stdDev = Math.sqrt(variance);
+                const consistencyScore = Math.max(0, Math.round(100 - (stdDev * 5)));
+
                 return {
                     name: month.name,
                     key: month.key,
@@ -121,29 +137,77 @@ export default function Analysis() {
                     maxStreak,
                     daysTracked: month.days.length,
                     bestDay: sortedDays.reduce((a, b) => (a.completed > b.completed ? a : b), {}),
-                    worstDays
+                    worstDays,
+                    consistencyScore,
+                    totalMissedDays
                 };
             });
     }, [monthlyData]);
 
     // Get stats for current selection
+    // Get stats for current selection
     const currentStats = useMemo(() => {
         if (selectedMonth === 'current') {
-            // Simplified current stats calculation
             const today = new Date();
+            today.setHours(23, 59, 59, 999);
             const thirtyDaysAgo = new Date(today);
             thirtyDaysAgo.setDate(today.getDate() - 30);
+            thirtyDaysAgo.setHours(0, 0, 0, 0);
 
-            const relevantDays = historyData.filter(d => new Date(d.date) >= thirtyDaysAgo);
-            if (relevantDays.length === 0) return {};
+            // 1. Generate full 30-day timeline to catch MISSING days
+            const allDaysMap = new Map();
+            // Fill with existing history first
+            historyData.forEach(d => {
+                const date = new Date(d.date);
+                if (date >= thirtyDaysAgo && date <= today) {
+                    allDaysMap.set(date.toISOString().split('T')[0], { ...d, date: date.toISOString() });
+                }
+            });
 
-            const total = relevantDays.reduce((acc, curr) => acc + (curr.completed || 0), 0);
-            const avg = Math.round(total / relevantDays.length) || 0;
+            // Fill gaps with 0-data objects
+            const fullHistory = [];
+            let maxTotalSeen = 0;
+            allDaysMap.forEach(d => maxTotalSeen = Math.max(maxTotalSeen, d.total || 0));
+            if (maxTotalSeen === 0) maxTotalSeen = 10; // Default if no data
+
+            for (let i = 0; i < 30; i++) {
+                const d = new Date(thirtyDaysAgo);
+                d.setDate(d.getDate() + i);
+                const key = d.toISOString().split('T')[0];
+
+                if (allDaysMap.has(key)) {
+                    fullHistory.push(allDaysMap.get(key));
+                } else {
+                    // Inject MISSING day
+                    fullHistory.push({
+                        date: d.toISOString(),
+                        completed: 0,
+                        total: maxTotalSeen, // Assume typical load
+                        isMissing: true
+                    });
+                }
+            }
+
+            if (fullHistory.length === 0) return {};
+
+            const totalCompleted = fullHistory.reduce((acc, curr) => acc + (curr.completed || 0), 0);
+            const avgCompleted = Math.round(totalCompleted / fullHistory.length) || 0;
+            const totalMissedDays = fullHistory.filter(d => (d.completed || 0) === 0).length;
+
+            // 2. Consistency Score (Standard Deviation)
+            const completedCounts = fullHistory.map(d => d.completed || 0);
+            const mean = completedCounts.reduce((a, b) => a + b, 0) / completedCounts.length;
+            const variance = completedCounts.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / completedCounts.length;
+            const stdDev = Math.sqrt(variance);
+            // Score: 100 - (CV * 100) where CV is Coefficient of Variation, simplified mapping
+            // Lower StdDev relative to mean is better. 
+            // Simple robust linear map: 0 stdDev -> 100, High stdDev -> Lower score
+            const consistencyScore = Math.max(0, Math.round(100 - (stdDev * 5)));
 
             // Streak
             let streak = 0;
             let maxStreak = 0;
-            const sorted = [...relevantDays].sort((a, b) => new Date(a.date) - new Date(b.date));
+            const sorted = [...fullHistory].sort((a, b) => new Date(a.date) - new Date(b.date));
             let bestDay = sorted[0];
 
             sorted.forEach(d => {
@@ -152,17 +216,26 @@ export default function Analysis() {
                 else streak = 0;
             });
 
-            // Find worst days (lowest completion, must have had some skipped tasks)
+            // Find worst days (lowest completion)
+            // Now correctly includes inserted "Missing Days" (0 completed)
             const worstDays = [...sorted]
-                .filter(d => (d.total || 0) > 0 && ((d.total || 0) - (d.completed || 0)) > 0) // Only days with skipped tasks
+                .filter(d => (d.total || 0) > 0)
                 .sort((a, b) => {
-                    const aSkipped = (a.total || 0) - (a.completed || 0);
-                    const bSkipped = (b.total || 0) - (b.completed || 0);
-                    return bSkipped - aSkipped; // Most skipped first
+                    const aPercent = (a.completed || 0) / (a.total || 1);
+                    const bPercent = (b.completed || 0) / (b.total || 1);
+                    return aPercent - bPercent; // Lowest % first (0% is worst)
                 })
-                .slice(0, 2);
+                .slice(0, 3); // Top 3 worst
 
-            return { avgCompleted: avg, totalCompleted: total, maxStreak, bestDay, worstDays };
+            return {
+                avgCompleted,
+                totalCompleted,
+                maxStreak,
+                bestDay,
+                worstDays,
+                consistencyScore,
+                totalMissedDays
+            };
         }
         return monthlyStats.find(m => m.key === selectedMonth) || {};
     }, [selectedMonth, historyData, monthlyStats]);
@@ -320,12 +393,8 @@ export default function Analysis() {
     }), [chartData.maxTotal]);
 
     // Find best and worst days FOR SELECTED MONTH (Re-used currentStats logic above for cleaner code)
-    const stats = useMemo(() => {
-        // Just reuse the calculation we already did or keep the old one for "worst day" specific logic
-        // For brevity using existing logic from file but simplified
-        // Actually, let's keep the existing UI logic using logic similar to old file
-        return { bestDay: currentStats.bestDay, worstDay: null }; // Simplified for now
-    }, [currentStats]);
+    // Use the calculated stats directly
+    const stats = currentStats;
     // Note: In full implementation, we'd ensure worstDay is also calculated. 
     // For this edit, relying on the 'currentStats' I added to be sufficient for the AI.
 
@@ -399,23 +468,35 @@ export default function Analysis() {
                 </div>
 
                 {/* Needs Focus - Show worst performing days */}
+                {/* Needs Focus - Show worst performing days */}
                 <div className="tile p-6 rounded-xl flex items-start gap-4 bg-gradient-to-br from-red-900/40 to-black border border-red-500/30">
                     <div className="w-12 h-12 rounded-full bg-red-500/20 flex items-center justify-center text-red-400 text-2xl flex-shrink-0">
                         <FontAwesomeIcon icon={faCalendarXmark} />
                     </div>
-                    <div className="min-w-0">
-                        <p className="text-gray-400 text-xs uppercase tracking-wider">Needs Focus</p>
-                        {stats.worstDays && stats.worstDays.length > 0 ? (
+                    <div className="min-w-0 flex-1">
+                        <div className="flex justify-between items-start">
+                            <p className="text-gray-400 text-xs uppercase tracking-wider">Needs Focus</p>
+                            {stats.totalMissedDays > 0 && (
+                                <span className="text-red-400 text-xs bg-red-900/40 px-2 py-0.5 rounded-full">{stats.totalMissedDays} missed days</span>
+                            )}
+                        </div>
+
+                        {stats.worstDays && stats.worstDays.length > 0 && stats.worstDays[0].completed < stats.worstDays[0].total ? (
                             <div className="space-y-1 mt-1">
                                 {stats.worstDays.map((day, idx) => {
-                                    const skipped = (day.total || 0) - (day.completed || 0);
+                                    const percent = Math.round(((day.completed || 0) / (day.total || 1)) * 100);
+                                    // Skip if perfect day
+                                    if (percent === 100) return null;
+
                                     return (
                                         <div key={idx} className="flex items-center gap-2">
                                             <span className={`text-xs font-bold ${idx === 0 ? 'text-red-400' : 'text-orange-400'}`}>#{idx + 1}</span>
                                             <span className="header-font text-lg text-white truncate">
                                                 {new Date(day.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
                                             </span>
-                                            <span className="text-red-400 text-xs">({skipped} skipped)</span>
+                                            <span className="text-red-400 text-xs">
+                                                {day.isMissing ? "(Missed)" : `(${percent}%)`}
+                                            </span>
                                         </div>
                                     );
                                 })}
@@ -426,6 +507,28 @@ export default function Analysis() {
                                 <p className="text-xs text-gray-500">No tasks skipped</p>
                             </div>
                         )}
+                    </div>
+                </div>
+
+                {/* Performance Metrics Tile (New) */}
+                <div className="tile p-6 rounded-xl bg-gradient-to-br from-indigo-900/40 to-black border border-indigo-500/30 flex flex-col justify-between">
+                    <div>
+                        <p className="text-indigo-400 text-xs uppercase tracking-wider mb-1">Consistency Score</p>
+                        <div className="flex items-end gap-2">
+                            <h4 className="header-font text-4xl text-white">{stats.consistencyScore || 'N/A'}</h4>
+                            <span className="text-gray-400 text-sm mb-1">/ 100</span>
+                        </div>
+                    </div>
+                    <div className="mt-4">
+                        <div className="w-full bg-gray-700 h-1.5 rounded-full overflow-hidden">
+                            <div
+                                className="h-full bg-gradient-to-r from-indigo-500 to-purple-500"
+                                style={{ width: `${stats.consistencyScore || 0}%` }}
+                            />
+                        </div>
+                        <p className="text-xs text-gray-400 mt-2">
+                            {stats.consistencyScore >= 80 ? '🔥 Highly Consistent' : stats.consistencyScore >= 50 ? '⚖️ Balanced' : '📉 erratic'}
+                        </p>
                     </div>
                 </div>
 
