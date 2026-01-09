@@ -101,6 +101,16 @@ export default function Analysis() {
                     }
                 });
 
+                // Calculate worst days (most skipped tasks)
+                const worstDays = [...month.days]
+                    .filter(d => (d.total || 0) > 0)
+                    .sort((a, b) => {
+                        const aSkipped = (a.total || 0) - (a.completed || 0);
+                        const bSkipped = (b.total || 0) - (b.completed || 0);
+                        return bSkipped - aSkipped; // Most skipped first
+                    })
+                    .slice(0, 2);
+
                 return {
                     name: month.name,
                     key: month.key,
@@ -109,7 +119,8 @@ export default function Analysis() {
                     mostlyMissed,
                     maxStreak,
                     daysTracked: month.days.length,
-                    bestDay: sortedDays.reduce((a, b) => (a.completed > b.completed ? a : b), {})
+                    bestDay: sortedDays.reduce((a, b) => (a.completed > b.completed ? a : b), {}),
+                    worstDays
                 };
             });
     }, [monthlyData]);

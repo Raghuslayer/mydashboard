@@ -93,7 +93,8 @@ export default function Tasks() {
             const sortedByPercent = [...month.days].sort((a, b) => b.percent - a.percent);
             const avgPercent = Math.round(month.days.reduce((acc, d) => acc + d.percent, 0) / month.days.length) || 0;
             const bestDays = sortedByPercent.filter(d => d.percent > 0).slice(0, 3);
-            const worstDays = sortedByPercent.filter(d => d.total > 0).reverse().slice(0, 3);
+            // Worst days = lowest percent first (sort ascending by percent)
+            const worstDays = [...month.days].filter(d => d.total > 0).sort((a, b) => a.percent - b.percent).slice(0, 3);
             const perfectDays = month.days.filter(d => d.percent === 100).length;
 
             return { ...month, avgPercent, bestDays, worstDays, perfectDays, totalDays: month.days.length };
