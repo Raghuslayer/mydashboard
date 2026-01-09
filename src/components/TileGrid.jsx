@@ -213,6 +213,7 @@ export default function TileGrid({ items, tabId, isRoutine, checkedStates, onTil
                 onSave={handleSaveTask}
                 initialData={editingTask}
                 mode={editingTask ? 'edit' : 'add'}
+                tabType={tabId}
             />
 
             {/* Delete Confirmation Modal */}

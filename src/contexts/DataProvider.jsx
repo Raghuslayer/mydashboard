@@ -28,8 +28,8 @@ export function DataProvider({ children }) {
     const [dailyAnalysis, setDailyAnalysis] = useState(null); // Cached AI analysis
     const [loadingData, setLoadingData] = useState(true);
 
-    // Editable routine tabs - only these can be customized
-    const editableRoutineTabs = ['morning', 'deepWork', 'night'];
+    // Editable routine tabs - these can be customized by the user
+    const editableRoutineTabs = ['morning', 'deepWork', 'night', 'vault', 'learning', 'commitments', 'neverDo', 'mustDo', 'skills'];
 
     // IMPORTANT: Use 'default-app-id' to match the original HTML dashboard's Firebase path
     // The data was stored under artifacts/default-app-id/users/... not the actual Firebase app ID
