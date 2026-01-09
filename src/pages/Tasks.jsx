@@ -69,7 +69,7 @@ export default function Tasks() {
         setIsBreakdownModalOpen(false);
     };
 
-    // Monthly analytics from dailyTaskHistory (separate from routine tasks)
+    // Scientific Analytics: Monthly stats + Consistency Score + Day of Week Analysis
     const monthlyAnalytics = useMemo(() => {
         if (!dailyTaskHistory || dailyTaskHistory.length === 0) return [];
 
@@ -84,20 +84,55 @@ export default function Tasks() {
             }
             grouped[monthKey].days.push({
                 ...day,
-                percent: day.percent || (day.total > 0 ? Math.round((day.completed / day.total) * 100) : 0)
+                percent: day.percent || (day.total > 0 ? Math.round((day.completed / day.total) * 100) : 0),
+                dayOfWeek: date.getDay() // 0 = Sun, 1 = Mon, etc.
             });
         });
 
         return Object.keys(grouped).sort().reverse().slice(0, 12).map(key => {
             const month = grouped[key];
-            const sortedByPercent = [...month.days].sort((a, b) => b.percent - a.percent);
-            const avgPercent = Math.round(month.days.reduce((acc, d) => acc + d.percent, 0) / month.days.length) || 0;
-            const bestDays = sortedByPercent.filter(d => d.percent > 0).slice(0, 3);
-            // Worst days = lowest percent first (sort ascending by percent)
-            const worstDays = [...month.days].filter(d => d.total > 0).sort((a, b) => a.percent - b.percent).slice(0, 3);
-            const perfectDays = month.days.filter(d => d.percent === 100).length;
+            const days = month.days;
+            const sortedByPercent = [...days].sort((a, b) => b.percent - a.percent);
+            const avgPercent = Math.round(days.reduce((acc, d) => acc + d.percent, 0) / days.length) || 0;
 
-            return { ...month, avgPercent, bestDays, worstDays, perfectDays, totalDays: month.days.length };
+            // 1. Consistency Score (based on Standard Deviation)
+            // Lower StdDev = Higher Consistency. Score out of 100.
+            const variance = days.reduce((acc, d) => acc + Math.pow(d.percent - avgPercent, 2), 0) / days.length;
+            const stdDev = Math.sqrt(variance);
+            const consistencyScore = Math.max(0, Math.round(100 - stdDev)); // Simple metric: 100 is perfect consistency
+
+            // 2. Day of Week Analysis
+            const dayStats = Array(7).fill(0).map(() => ({ total: 0, count: 0 }));
+            days.forEach(d => {
+                dayStats[d.dayOfWeek].total += d.percent;
+                dayStats[d.dayOfWeek].count += 1;
+            });
+            const bestDayIndex = dayStats
+                .map((d, i) => ({ avg: d.count ? d.total / d.count : 0, day: i }))
+                .sort((a, b) => b.avg - a.avg)[0].day;
+            const daysOfWeek = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+            const productiveDay = daysOfWeek[bestDayIndex];
+
+            // 3. Best & Needs Improvement
+            const bestDays = sortedByPercent.filter(d => d.percent > 0).slice(0, 3);
+            // Fix: Only show "Needs Improvement" if percent < 100
+            const worstDays = [...days]
+                .filter(d => d.total > 0 && d.percent < 100)
+                .sort((a, b) => a.percent - b.percent) // Lowest percent first
+                .slice(0, 3);
+
+            const perfectDays = days.filter(d => d.percent === 100).length;
+
+            return {
+                ...month,
+                avgPercent,
+                bestDays,
+                worstDays,
+                perfectDays,
+                totalDays: days.length,
+                consistencyScore,
+                productiveDay
+            };
         });
     }, [dailyTaskHistory]);
 
@@ -275,9 +310,14 @@ export default function Tasks() {
                                         <button onClick={() => setSelectedMonth(selectedMonth === month.key ? null : month.key)} className="w-full flex items-center justify-between p-4 bg-white/5 hover:bg-white/10 transition-colors text-left">
                                             <div className="flex items-center gap-4">
                                                 <span className="header-font text-lg text-white">{month.name}</span>
-                                                <span className={`text-sm font-bold px-2 py-1 rounded ${month.avgPercent >= 80 ? 'bg-green-500/20 text-green-400' : month.avgPercent >= 50 ? 'bg-yellow-500/20 text-yellow-400' : 'bg-red-500/20 text-red-400'}`}>
-                                                    {month.avgPercent}% avg
-                                                </span>
+                                                <div className="flex gap-2 text-xs">
+                                                    <span className={`font-bold px-2 py-1 rounded ${month.avgPercent >= 80 ? 'bg-green-500/20 text-green-400' : month.avgPercent >= 50 ? 'bg-yellow-500/20 text-yellow-400' : 'bg-red-500/20 text-red-400'}`}>
+                                                        {month.avgPercent}% avg
+                                                    </span>
+                                                    <span className="bg-blue-500/20 text-blue-300 px-2 py-1 rounded">
+                                                        C-Score: {month.consistencyScore}
+                                                    </span>
+                                                </div>
                                                 {month.perfectDays > 0 && <span className="text-xs text-green-400"><FontAwesomeIcon icon={faTrophy} /> {month.perfectDays}</span>}
                                             </div>
                                             <FontAwesomeIcon icon={selectedMonth === month.key ? faChevronUp : faChevronDown} className="text-gray-400" />
@@ -298,6 +338,31 @@ export default function Tasks() {
                                                         </ul>
                                                     ) : <p className="text-gray-500 text-sm">No data</p>}
                                                 </div>
+                                                {/* Insights Panel */}
+                                                <div className="col-span-1 md:col-span-2 bg-indigo-900/20 p-4 rounded-xl border border-indigo-500/20 flex flex-col sm:flex-row justify-between gap-4">
+                                                    <div>
+                                                        <h4 className="text-indigo-300 text-sm font-bold mb-1">💡 Scientific Insight</h4>
+                                                        <p className="text-gray-300 text-sm">
+                                                            Your most productive day is <span className="text-white font-bold">{month.productiveDay}</span>.
+                                                            Consistency Score: <span className="text-white font-bold">{month.consistencyScore}/100</span>.
+                                                        </p>
+                                                    </div>
+                                                </div>
+
+                                                <div className="bg-green-900/20 p-4 rounded-xl border border-green-500/20">
+                                                    <h4 className="text-green-400 text-sm font-bold mb-3"><FontAwesomeIcon icon={faTrophy} /> Best Performance</h4>
+                                                    {month.bestDays.length > 0 ? (
+                                                        <ul className="space-y-2">
+                                                            {month.bestDays.map((day, idx) => (
+                                                                <li key={idx} className="flex items-center justify-between text-sm">
+                                                                    <span className="text-gray-300">{formatDate(day.date)}</span>
+                                                                    <span className="text-green-400 font-bold">{day.percent}%</span>
+                                                                </li>
+                                                            ))}
+                                                        </ul>
+                                                    ) : <p className="text-gray-500 text-sm">No data</p>}
+                                                </div>
+
                                                 <div className="bg-red-900/20 p-4 rounded-xl border border-red-500/20">
                                                     <h4 className="text-red-400 text-sm font-bold mb-3"><FontAwesomeIcon icon={faExclamationTriangle} /> Needs Improvement</h4>
                                                     {month.worstDays.length > 0 ? (
@@ -309,7 +374,13 @@ export default function Tasks() {
                                                                 </li>
                                                             ))}
                                                         </ul>
-                                                    ) : <p className="text-gray-500 text-sm">No data</p>}
+                                                    ) : (
+                                                        <div className="flex flex-col items-center py-2 text-center">
+                                                            <span className="text-2xl mb-1">🎉</span>
+                                                            <p className="text-green-400 font-bold text-sm">Flawless Month!</p>
+                                                            <p className="text-xs text-gray-400">No days under 100%</p>
+                                                        </div>
+                                                    )}
                                                 </div>
                                             </div>
                                         )}

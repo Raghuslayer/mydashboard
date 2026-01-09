@@ -101,9 +101,9 @@ export default function Analysis() {
                     }
                 });
 
-                // Calculate worst days (most skipped tasks)
+                // Calculate worst days (most skipped tasks - only if skipped > 0)
                 const worstDays = [...month.days]
-                    .filter(d => (d.total || 0) > 0)
+                    .filter(d => (d.total || 0) > 0 && ((d.total || 0) - (d.completed || 0)) > 0)
                     .sort((a, b) => {
                         const aSkipped = (a.total || 0) - (a.completed || 0);
                         const bSkipped = (b.total || 0) - (b.completed || 0);
@@ -151,9 +151,9 @@ export default function Analysis() {
                 else streak = 0;
             });
 
-            // Find worst days (lowest completion, but must have had some total)
+            // Find worst days (lowest completion, must have had some skipped tasks)
             const worstDays = [...sorted]
-                .filter(d => (d.total || 0) > 0) // Only days with tasks to do
+                .filter(d => (d.total || 0) > 0 && ((d.total || 0) - (d.completed || 0)) > 0) // Only days with skipped tasks
                 .sort((a, b) => {
                     const aSkipped = (a.total || 0) - (a.completed || 0);
                     const bSkipped = (b.total || 0) - (b.completed || 0);
@@ -420,7 +420,10 @@ export default function Analysis() {
                                 })}
                             </div>
                         ) : (
-                            <p className="header-font text-xl text-white mt-1">No data yet</p>
+                            <div className="mt-1">
+                                <p className="header-font text-lg text-green-400">Perfect! 🎉</p>
+                                <p className="text-xs text-gray-500">No tasks skipped</p>
+                            </div>
                         )}
                     </div>
                 </div>
