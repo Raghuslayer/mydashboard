@@ -5,7 +5,7 @@ import { faArrowsRotate } from '@fortawesome/free-solid-svg-icons';
 import { staticData, routineTabs } from '../data/staticData';
 
 export default function StatsBar() {
-    const { userData, checkedStates, dailyTasks } = useData();
+    const { userData, checkedStates, dailyTasks, getRoutineTasks, editableRoutineTabs } = useData();
 
     // Calculate XP progress with safety checks
     const level = userData?.level || 1;
@@ -20,18 +20,29 @@ export default function StatsBar() {
         let completed = 0;
 
         try {
-            // Count routine tasks - with safety checks
+            // Count routine tasks - use custom tasks for editable tabs
             if (Array.isArray(routineTabs)) {
                 routineTabs.forEach(tabId => {
-                    const items = staticData?.[tabId];
+                    const isEditable = editableRoutineTabs?.includes(tabId);
+                    const items = (getRoutineTasks && isEditable)
+                        ? getRoutineTasks(tabId)
+                        : staticData?.[tabId];
+
                     if (Array.isArray(items)) {
                         const rawStates = checkedStates?.[tabId];
-                        // Convert object to array if needed (Firebase stores arrays as objects)
-                        const states = Array.isArray(rawStates)
-                            ? rawStates
-                            : Object.values(rawStates || {});
-                        total += items.length;
-                        completed += states.filter(Boolean).length;
+
+                        if (isEditable && rawStates && typeof rawStates === 'object' && !Array.isArray(rawStates)) {
+                            // ID-based counting for editable tabs
+                            total += items.length;
+                            completed += Object.values(rawStates).filter(Boolean).length;
+                        } else {
+                            // Index-based counting for legacy tabs
+                            const states = Array.isArray(rawStates)
+                                ? rawStates
+                                : Object.values(rawStates || {});
+                            total += items.length;
+                            completed += states.filter(Boolean).length;
+                        }
                     }
                 });
             }

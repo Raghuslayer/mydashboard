@@ -33,7 +33,7 @@ ChartJS.register(
 );
 
 export default function Analysis() {
-    const { historyData, dailyAnalysis, setDailyAnalysis, checkedStates, dailyTasks } = useData();
+    const { historyData, dailyAnalysis, setDailyAnalysis, checkedStates, dailyTasks, getRoutineTasks, editableRoutineTabs } = useData();
     const [selectedMonth, setSelectedMonth] = useState('current');
 
     // AI Modal State
@@ -161,16 +161,27 @@ export default function Analysis() {
         // Calculate today's completed count using same logic as StatsBar
         let todayCompleted = 0;
 
-        // Count routine tasks from all tabs
+        // Count routine tasks from all tabs (using custom tasks for editable tabs)
         if (Array.isArray(routineTabs)) {
             routineTabs.forEach(tabId => {
-                const items = staticData?.[tabId];
+                const isEditable = editableRoutineTabs?.includes(tabId);
+                const items = (getRoutineTasks && isEditable)
+                    ? getRoutineTasks(tabId)
+                    : staticData?.[tabId];
+
                 if (Array.isArray(items)) {
                     const rawStates = checkedStates?.[tabId];
-                    const states = Array.isArray(rawStates)
-                        ? rawStates
-                        : Object.values(rawStates || {});
-                    todayCompleted += states.filter(Boolean).length;
+
+                    if (isEditable && rawStates && typeof rawStates === 'object' && !Array.isArray(rawStates)) {
+                        // ID-based counting for editable tabs
+                        todayCompleted += Object.values(rawStates).filter(Boolean).length;
+                    } else {
+                        // Index-based counting for legacy tabs
+                        const states = Array.isArray(rawStates)
+                            ? rawStates
+                            : Object.values(rawStates || {});
+                        todayCompleted += states.filter(Boolean).length;
+                    }
                 }
             });
         }

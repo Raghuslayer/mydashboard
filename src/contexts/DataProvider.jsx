@@ -3,6 +3,7 @@ import { useAuth } from './AuthContext';
 import { db } from '../services/firebase';
 import { doc, getDoc, setDoc, collection, getDocs } from 'firebase/firestore';
 import { debounce } from '../utils/debounce';
+import { staticData } from '../data/staticData';
 
 const DataContext = createContext();
 
@@ -20,11 +21,15 @@ export function DataProvider({ children }) {
     const [journalEntries, setJournalEntries] = useState([]);
     const [matrixTasks, setMatrixTasks] = useState([]);
     const [historyData, setHistoryData] = useState([]);
-    const [semesterGoals, setSemesterGoals] = useState([]); // New state for goals
+    const [semesterGoals, setSemesterGoals] = useState([]);
+    const [customRoutineTasks, setCustomRoutineTasks] = useState({}); // { morning: [...], deepWork: [...], night: [...] }
     const [dailyLesson, setDailyLesson] = useState(null);
     const [dailyQuote, setDailyQuote] = useState(null);
     const [dailyAnalysis, setDailyAnalysis] = useState(null); // Cached AI analysis
     const [loadingData, setLoadingData] = useState(true);
+
+    // Editable routine tabs - only these can be customized
+    const editableRoutineTabs = ['morning', 'deepWork', 'night'];
 
     // IMPORTANT: Use 'default-app-id' to match the original HTML dashboard's Firebase path
     // The data was stored under artifacts/default-app-id/users/... not the actual Firebase app ID
@@ -58,6 +63,10 @@ export function DataProvider({ children }) {
 
     const saveSemesterGoals = useCallback(debounce(async (uid, goals) => {
         await setDoc(doc(db, `artifacts/${getAppId()}/users/${uid}/user_data`, 'semester_goals'), { goals }, { merge: true });
+    }, 1000), []);
+
+    const saveRoutineTasks = useCallback(debounce(async (uid, tasks) => {
+        await setDoc(doc(db, `artifacts/${getAppId()}/users/${uid}/user_data`, 'routine_tasks'), { tasks }, { merge: true });
     }, 1000), []);
 
     const saveDailyLesson = async (uid, date, lesson) => {
@@ -128,12 +137,28 @@ export function DataProvider({ children }) {
                 if (sgSnap.exists()) {
                     setSemesterGoals(sgSnap.data().goals || []);
                 } else {
-                    // Fallback to static data for first-time load (optional)
-                    // Or start empty. Let's start empty to let user add their own.
                     setSemesterGoals([]);
                 }
 
-                // 9. Daily Lesson & Quote Cache (for today only)
+                // 9. Custom Routine Tasks (Initialize from static data if not exists)
+                const rtSnap = await getDoc(doc(db, `artifacts/${appId}/users/${uid}/user_data`, 'routine_tasks'));
+                if (rtSnap.exists() && rtSnap.data().tasks) {
+                    setCustomRoutineTasks(rtSnap.data().tasks);
+                } else {
+                    // Initialize from static data with IDs
+                    const initialTasks = {};
+                    editableRoutineTabs.forEach(tabId => {
+                        initialTasks[tabId] = (staticData[tabId] || []).map((task, idx) => ({
+                            id: `${tabId}-${idx}-${Date.now()}`,
+                            ...task
+                        }));
+                    });
+                    setCustomRoutineTasks(initialTasks);
+                    // Save to Firebase (first-time initialization)
+                    await setDoc(doc(db, `artifacts/${appId}/users/${uid}/user_data`, 'routine_tasks'), { tasks: initialTasks });
+                }
+
+                // 10. Daily Lesson & Quote Cache (for today only)
                 const contentSnap = await getDoc(doc(db, `artifacts/${appId}/users/${uid}/daily_content`, today));
                 if (contentSnap.exists()) {
                     const data = contentSnap.data();
@@ -164,20 +189,27 @@ export function DataProvider({ children }) {
         });
     }
 
-    function toggleRoutineTask(tabId, index, isChecked) {
+    // Toggle routine task - now uses task ID for editable tabs, falls back to index for others
+    function toggleRoutineTask(tabId, taskIdOrIndex, isChecked) {
         setCheckedStates(prev => {
-            // Ensure prev[tabId] is always treated as an array
-            const currentTabState = prev[tabId];
-            const newTabState = Array.isArray(currentTabState)
-                ? [...currentTabState]
-                : Object.values(currentTabState || {});
+            const currentTabState = prev[tabId] || {};
+            let newTabState;
 
-            // Ensure the array is long enough
-            while (newTabState.length <= index) {
-                newTabState.push(false);
+            // For editable tabs, use ID-based tracking
+            if (editableRoutineTabs.includes(tabId) && typeof taskIdOrIndex === 'string') {
+                newTabState = { ...currentTabState, [taskIdOrIndex]: isChecked };
+            } else {
+                // Legacy index-based for non-editable tabs
+                const arrState = Array.isArray(currentTabState)
+                    ? [...currentTabState]
+                    : Object.values(currentTabState || {});
+                while (arrState.length <= taskIdOrIndex) {
+                    arrState.push(false);
+                }
+                arrState[taskIdOrIndex] = isChecked;
+                newTabState = arrState;
             }
 
-            newTabState[index] = isChecked;
             const newState = { ...prev, [tabId]: newTabState };
 
             if (currentUser) {
@@ -186,6 +218,81 @@ export function DataProvider({ children }) {
             }
             addXP(isChecked ? 5 : -5);
             return newState;
+        });
+    }
+
+    // Get routine tasks - returns custom tasks for editable tabs, static data for others
+    function getRoutineTasks(tabId) {
+        if (editableRoutineTabs.includes(tabId)) {
+            return customRoutineTasks[tabId] || [];
+        }
+        return staticData[tabId] || [];
+    }
+
+    // Add a new routine task
+    function addRoutineTask(tabId, taskData) {
+        if (!editableRoutineTabs.includes(tabId)) return;
+
+        const newTask = {
+            id: crypto.randomUUID(),
+            title: taskData.title || 'New Task',
+            description: taskData.description || '',
+            thumbnail: taskData.thumbnail || `https://placehold.co/600x400/2A0000/FF5E00?text=${encodeURIComponent(taskData.title || 'NEW')}`,
+            createdAt: Date.now()
+        };
+
+        setCustomRoutineTasks(prev => {
+            const newState = {
+                ...prev,
+                [tabId]: [...(prev[tabId] || []), newTask]
+            };
+            if (currentUser) saveRoutineTasks(currentUser.uid, newState);
+            return newState;
+        });
+    }
+
+    // Update an existing routine task
+    function updateRoutineTask(tabId, taskId, updatedData) {
+        if (!editableRoutineTabs.includes(tabId)) return;
+
+        setCustomRoutineTasks(prev => {
+            const newState = {
+                ...prev,
+                [tabId]: (prev[tabId] || []).map(task =>
+                    task.id === taskId ? { ...task, ...updatedData } : task
+                )
+            };
+            if (currentUser) saveRoutineTasks(currentUser.uid, newState);
+            return newState;
+        });
+    }
+
+    // Delete a routine task
+    function deleteRoutineTask(tabId, taskId) {
+        if (!editableRoutineTabs.includes(tabId)) return;
+
+        setCustomRoutineTasks(prev => {
+            const newState = {
+                ...prev,
+                [tabId]: (prev[tabId] || []).filter(task => task.id !== taskId)
+            };
+            if (currentUser) saveRoutineTasks(currentUser.uid, newState);
+            return newState;
+        });
+
+        // Also remove from checkedStates
+        setCheckedStates(prev => {
+            const tabState = prev[tabId];
+            if (tabState && typeof tabState === 'object' && !Array.isArray(tabState)) {
+                const { [taskId]: _, ...rest } = tabState;
+                const newState = { ...prev, [tabId]: rest };
+                if (currentUser) {
+                    const today = new Date().toISOString().split('T')[0];
+                    saveProgress(currentUser.uid, today, newState);
+                }
+                return newState;
+            }
+            return prev;
         });
     }
 
@@ -292,12 +399,17 @@ export function DataProvider({ children }) {
         dailyTasks,
         journalEntries,
         matrixTasks,
-        matrixTasks,
         historyData,
-        semesterGoals, // Export new state
+        semesterGoals,
+        customRoutineTasks, // Custom routine tasks state
         loadingData,
         addXP,
         toggleRoutineTask,
+        getRoutineTasks,       // Get tasks for a tab
+        addRoutineTask,        // Add new routine task
+        updateRoutineTask,     // Update routine task
+        deleteRoutineTask,     // Delete routine task
+        editableRoutineTabs,   // Which tabs are editable
         addDailyTask,
         toggleDailyTask,
         clearCompletedDailyTasks,
@@ -305,9 +417,8 @@ export function DataProvider({ children }) {
         addMatrixTask,
         toggleMatrixTask,
         deleteMatrixTask,
-        deleteMatrixTask,
         updateGoal,
-        addSemesterGoal,    // Export new functions
+        addSemesterGoal,
         updateSemesterGoal,
         deleteSemesterGoal,
         dailyLesson,

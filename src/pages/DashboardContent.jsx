@@ -6,15 +6,30 @@ import { staticData, routineTabs } from '../data/staticData';
 
 export default function DashboardContent() {
     const { tabId } = useParams();
-    const { checkedStates, toggleRoutineTask } = useData();
+    const {
+        checkedStates,
+        toggleRoutineTask,
+        getRoutineTasks,
+        addRoutineTask,
+        updateRoutineTask,
+        deleteRoutineTask,
+        editableRoutineTabs
+    } = useData();
 
-    const items = staticData[tabId] || [];
+    // Get items from custom routine tasks for editable tabs, static data for others
+    const items = getRoutineTasks ? getRoutineTasks(tabId) : staticData[tabId] || [];
     const isRoutine = routineTabs.includes(tabId);
-    // Ensure tabStates is always an array (Firebase might store as object)
-    const rawStates = checkedStates[tabId];
-    const tabStates = Array.isArray(rawStates) ? rawStates : Object.values(rawStates || {});
+    const isEditable = editableRoutineTabs?.includes(tabId);
 
-    if (items.length === 0) {
+    // Get checked states for this tab
+    const rawStates = checkedStates[tabId];
+    // For editable tabs with ID-based tracking, use object directly
+    // For legacy tabs, convert to array if needed
+    const tabStates = isEditable
+        ? (rawStates || {})
+        : (Array.isArray(rawStates) ? rawStates : Object.values(rawStates || {}));
+
+    if (items.length === 0 && !isEditable) {
         return (
             <div className="text-center text-gray-500 mt-20 glass-panel p-10">
                 <h2 className="header-font text-3xl mb-4">Tab '{tabId}' Under Construction</h2>
@@ -23,12 +38,32 @@ export default function DashboardContent() {
         );
     }
 
-    const handleTileClick = (index, item) => {
+    const handleTileClick = (taskIdOrIndex, item) => {
         if (isRoutine) {
-            const currentState = tabStates[index] || false;
-            toggleRoutineTask(tabId, index, !currentState);
+            const currentState = isEditable
+                ? (tabStates[taskIdOrIndex] || false)
+                : (tabStates[taskIdOrIndex] || false);
+            toggleRoutineTask(tabId, taskIdOrIndex, !currentState);
         }
-        // For non-routine, could open modal for video/context
+        // For non-routine, the modal is handled in TileGrid
+    };
+
+    const handleAddTask = (taskData) => {
+        if (addRoutineTask) {
+            addRoutineTask(tabId, taskData);
+        }
+    };
+
+    const handleEditTask = (taskId, updatedData) => {
+        if (updateRoutineTask) {
+            updateRoutineTask(tabId, taskId, updatedData);
+        }
+    };
+
+    const handleDeleteTask = (taskId) => {
+        if (deleteRoutineTask) {
+            deleteRoutineTask(tabId, taskId);
+        }
     };
 
     return (
@@ -36,8 +71,12 @@ export default function DashboardContent() {
             items={items}
             tabId={tabId}
             isRoutine={isRoutine}
+            isEditable={isEditable}
             checkedStates={tabStates}
             onTileClick={handleTileClick}
+            onAddTask={handleAddTask}
+            onEditTask={handleEditTask}
+            onDeleteTask={handleDeleteTask}
         />
     );
 }
