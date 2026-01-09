@@ -140,7 +140,17 @@ export default function Analysis() {
                 else streak = 0;
             });
 
-            return { avgCompleted: avg, totalCompleted: total, maxStreak, bestDay };
+            // Find worst days (lowest completion, but must have had some total)
+            const worstDays = [...sorted]
+                .filter(d => (d.total || 0) > 0) // Only days with tasks to do
+                .sort((a, b) => {
+                    const aSkipped = (a.total || 0) - (a.completed || 0);
+                    const bSkipped = (b.total || 0) - (b.completed || 0);
+                    return bSkipped - aSkipped; // Most skipped first
+                })
+                .slice(0, 2);
+
+            return { avgCompleted: avg, totalCompleted: total, maxStreak, bestDay, worstDays };
         }
         return monthlyStats.find(m => m.key === selectedMonth) || {};
     }, [selectedMonth, historyData, monthlyStats]);
@@ -376,17 +386,31 @@ export default function Analysis() {
                     </div>
                 </div>
 
-                {/* Worst Day - Keeping logic somewhat manual here for display */}
-                <div className="tile p-6 rounded-xl flex items-center gap-4 bg-gradient-to-br from-red-900/40 to-black border border-red-500/30">
-                    <div className="w-12 h-12 rounded-full bg-red-500/20 flex items-center justify-center text-red-400 text-2xl">
+                {/* Needs Focus - Show worst performing days */}
+                <div className="tile p-6 rounded-xl flex items-start gap-4 bg-gradient-to-br from-red-900/40 to-black border border-red-500/30">
+                    <div className="w-12 h-12 rounded-full bg-red-500/20 flex items-center justify-center text-red-400 text-2xl flex-shrink-0">
                         <FontAwesomeIcon icon={faCalendarXmark} />
                     </div>
-                    <div>
+                    <div className="min-w-0">
                         <p className="text-gray-400 text-xs uppercase tracking-wider">Needs Focus</p>
-                        <p className="header-font text-3xl text-white">
-                            N/A
-                        </p>
-                        <p className="text-red-400 text-xs text-opacity-50">Keep tracking...</p>
+                        {stats.worstDays && stats.worstDays.length > 0 ? (
+                            <div className="space-y-1 mt-1">
+                                {stats.worstDays.map((day, idx) => {
+                                    const skipped = (day.total || 0) - (day.completed || 0);
+                                    return (
+                                        <div key={idx} className="flex items-center gap-2">
+                                            <span className={`text-xs font-bold ${idx === 0 ? 'text-red-400' : 'text-orange-400'}`}>#{idx + 1}</span>
+                                            <span className="header-font text-lg text-white truncate">
+                                                {new Date(day.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+                                            </span>
+                                            <span className="text-red-400 text-xs">({skipped} skipped)</span>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        ) : (
+                            <p className="header-font text-xl text-white mt-1">No data yet</p>
+                        )}
                     </div>
                 </div>
 

@@ -334,6 +334,14 @@ export function DataProvider({ children }) {
         });
     }
 
+    function deleteDailyTask(id) {
+        setDailyTasks(prev => {
+            const newState = prev.filter(t => t.id !== id);
+            if (currentUser) saveTasks(currentUser.uid, newState);
+            return newState;
+        });
+    }
+
     // Journal
     function addJournalEntry(text) {
         const newEntry = { text, ts: Date.now() };
@@ -424,6 +432,7 @@ export function DataProvider({ children }) {
         addDailyTask,
         toggleDailyTask,
         clearCompletedDailyTasks,
+        deleteDailyTask,
         addJournalEntry,
         addMatrixTask,
         toggleMatrixTask,
