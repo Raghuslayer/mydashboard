@@ -140,22 +140,33 @@ export function DataProvider({ children }) {
                     setSemesterGoals([]);
                 }
 
-                // 9. Custom Routine Tasks (Initialize from static data if not exists)
+                // 9. Custom Routine Tasks (Initialize from static data if not exists, merge with existing)
                 const rtSnap = await getDoc(doc(db, `artifacts/${appId}/users/${uid}/user_data`, 'routine_tasks'));
-                if (rtSnap.exists() && rtSnap.data().tasks) {
-                    setCustomRoutineTasks(rtSnap.data().tasks);
-                } else {
-                    // Initialize from static data with IDs
-                    const initialTasks = {};
-                    editableRoutineTabs.forEach(tabId => {
-                        initialTasks[tabId] = (staticData[tabId] || []).map((task, idx) => ({
-                            id: `${tabId}-${idx}-${Date.now()}`,
-                            ...task
-                        }));
-                    });
-                    setCustomRoutineTasks(initialTasks);
-                    // Save to Firebase (first-time initialization)
-                    await setDoc(doc(db, `artifacts/${appId}/users/${uid}/user_data`, 'routine_tasks'), { tasks: initialTasks });
+                const existingTasks = rtSnap.exists() && rtSnap.data().tasks ? rtSnap.data().tasks : {};
+
+                // Merge: keep existing data, add static data for tabs that don't exist yet
+                const mergedTasks = { ...existingTasks };
+                let needsUpdate = false;
+
+                editableRoutineTabs.forEach(tabId => {
+                    // If this tab doesn't exist in Firebase, initialize from static data
+                    if (!mergedTasks[tabId] || mergedTasks[tabId].length === 0) {
+                        const staticItems = staticData[tabId] || [];
+                        if (staticItems.length > 0) {
+                            mergedTasks[tabId] = staticItems.map((task, idx) => ({
+                                id: `${tabId}-${idx}-${Date.now()}`,
+                                ...task
+                            }));
+                            needsUpdate = true;
+                        }
+                    }
+                });
+
+                setCustomRoutineTasks(mergedTasks);
+
+                // Save merged data to Firebase if we added new tabs
+                if (needsUpdate) {
+                    await setDoc(doc(db, `artifacts/${appId}/users/${uid}/user_data`, 'routine_tasks'), { tasks: mergedTasks });
                 }
 
                 // 10. Daily Lesson & Quote Cache (for today only)
