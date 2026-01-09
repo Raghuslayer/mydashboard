@@ -26,6 +26,7 @@ export function DataProvider({ children }) {
     const [dailyLesson, setDailyLesson] = useState(null);
     const [dailyQuote, setDailyQuote] = useState(null);
     const [dailyAnalysis, setDailyAnalysis] = useState(null); // Cached AI analysis
+    const [dailyTaskHistory, setDailyTaskHistory] = useState([]); // Separate history for user daily tasks
     const [loadingData, setLoadingData] = useState(true);
 
     // Editable routine tabs - these can be customized by the user
@@ -68,6 +69,11 @@ export function DataProvider({ children }) {
     const saveRoutineTasks = useCallback(debounce(async (uid, tasks) => {
         await setDoc(doc(db, `artifacts/${getAppId()}/users/${uid}/user_data`, 'routine_tasks'), { tasks }, { merge: true });
     }, 1000), []);
+
+    // Save daily task stats for analytics (separate from routine task history)
+    const saveDailyTaskStats = useCallback(debounce(async (uid, date, stats) => {
+        await setDoc(doc(db, `artifacts/${getAppId()}/users/${uid}/daily_task_history`, date), stats, { merge: true });
+    }, 2000), []);
 
     const saveDailyLesson = async (uid, date, lesson) => {
         await setDoc(doc(db, `artifacts/${getAppId()}/users/${uid}/daily_content`, date), { lesson }, { merge: true });
@@ -131,6 +137,16 @@ export function DataProvider({ children }) {
                 });
                 history.sort((a, b) => new Date(a.date) - new Date(b.date));
                 setHistoryData(history);
+
+                // 7b. Daily Task History (separate from routine tasks)
+                const taskHistoryRef = collection(db, `artifacts/${appId}/users/${uid}/daily_task_history`);
+                const taskHistorySnap = await getDocs(taskHistoryRef);
+                const taskHistory = [];
+                taskHistorySnap.forEach(doc => {
+                    taskHistory.push({ date: doc.id, ...doc.data() });
+                });
+                taskHistory.sort((a, b) => new Date(a.date) - new Date(b.date));
+                setDailyTaskHistory(taskHistory);
 
                 // 8. Semester Goals (Load from DB or fallback to static if empty)
                 const sgSnap = await getDoc(doc(db, `artifacts/${appId}/users/${uid}/user_data`, 'semester_goals'));
@@ -320,10 +336,36 @@ export function DataProvider({ children }) {
     function toggleDailyTask(id, isChecked) {
         setDailyTasks(prev => {
             const newState = prev.map(t => t.id === id ? { ...t, done: isChecked } : t);
-            if (currentUser) saveTasks(currentUser.uid, newState);
+            if (currentUser) {
+                saveTasks(currentUser.uid, newState);
+                // Update daily task stats
+                updateDailyTaskStats(newState);
+            }
             addXP(isChecked ? 5 : -5);
             return newState;
         });
+    }
+
+    // Update daily task history stats
+    function updateDailyTaskStats(tasks) {
+        if (!currentUser) return;
+        const today = new Date().toISOString().split('T')[0];
+        const total = tasks.length;
+        const completed = tasks.filter(t => t.done).length;
+        const percent = total > 0 ? Math.round((completed / total) * 100) : 0;
+
+        // Update local state
+        setDailyTaskHistory(prev => {
+            const existing = prev.find(d => d.date === today);
+            if (existing) {
+                return prev.map(d => d.date === today ? { ...d, total, completed, percent } : d);
+            } else {
+                return [...prev, { date: today, total, completed, percent }];
+            }
+        });
+
+        // Save to Firebase (debounced)
+        saveDailyTaskStats(currentUser.uid, today, { total, completed, percent });
     }
 
     function clearCompletedDailyTasks() {
@@ -419,6 +461,7 @@ export function DataProvider({ children }) {
         journalEntries,
         matrixTasks,
         historyData,
+        dailyTaskHistory, // Separate history for user-created daily tasks
         semesterGoals,
         customRoutineTasks, // Custom routine tasks state
         loadingData,
