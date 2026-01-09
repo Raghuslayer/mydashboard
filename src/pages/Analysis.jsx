@@ -5,7 +5,8 @@ import { getHabitAnalysis } from '../services/gemini';
 import { staticData, routineTabs } from '../data/staticData';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
-    faCalendarCheck, faCalendarXmark, faLightbulb, faCalendarDays, faRobot, faWandMagicSparkles
+    faCalendarCheck, faCalendarXmark, faLightbulb, faCalendarDays, faRobot, faWandMagicSparkles,
+    faTrophy, faExclamationTriangle
 } from '@fortawesome/free-solid-svg-icons';
 import {
     Chart as ChartJS,
