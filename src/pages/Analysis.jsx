@@ -32,7 +32,7 @@ ChartJS.register(
 );
 
 export default function Analysis() {
-    const { historyData, dailyAnalysis, setDailyAnalysis } = useData();
+    const { historyData, dailyAnalysis, setDailyAnalysis, checkedStates } = useData();
     const [selectedMonth, setSelectedMonth] = useState('current');
 
     // AI Modal State
@@ -147,6 +147,7 @@ export default function Analysis() {
     // Get chart data for selected month - show ALL days on x-axis
     const chartData = useMemo(() => {
         const today = new Date();
+        const todayKey = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
         today.setHours(23, 59, 59, 999); // End of today for comparisons
         let maxTotal = 0;
 
@@ -156,6 +157,18 @@ export default function Analysis() {
             return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
         };
 
+        // Calculate today's completed count from checkedStates (live data)
+        let todayCompleted = 0;
+        if (checkedStates && typeof checkedStates === 'object') {
+            Object.values(checkedStates).forEach(tabState => {
+                if (Array.isArray(tabState)) {
+                    todayCompleted += tabState.filter(Boolean).length;
+                } else if (typeof tabState === 'object' && tabState !== null) {
+                    todayCompleted += Object.values(tabState).filter(Boolean).length;
+                }
+            });
+        }
+
         // Create a map of date -> data for quick lookup
         const dataMap = {};
         historyData.forEach(day => {
@@ -164,6 +177,11 @@ export default function Analysis() {
             dataMap[dateKey] = day;
             if ((day.total || 0) > maxTotal) maxTotal = day.total || 0;
         });
+
+        // Add/override today's data with live checkedStates
+        dataMap[todayKey] = { completed: todayCompleted, total: todayCompleted };
+        if (todayCompleted > maxTotal) maxTotal = todayCompleted;
+
         if (maxTotal === 0) maxTotal = 81;
 
         // Generate all days for the range
@@ -222,7 +240,7 @@ export default function Analysis() {
                 }
             ]
         };
-    }, [selectedMonth, historyData]);
+    }, [selectedMonth, historyData, checkedStates]);
 
     // Chart options - use useMemo to update when chartData changes
     const chartOptions = useMemo(() => ({
