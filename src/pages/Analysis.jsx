@@ -144,66 +144,55 @@ export default function Analysis() {
         return monthlyStats.find(m => m.key === selectedMonth) || {};
     }, [selectedMonth, historyData, monthlyStats]);
 
-    // Get chart data for selected month - show only tracked days
+    // Get chart data for selected month - show ALL days on x-axis
     const chartData = useMemo(() => {
         const today = new Date();
         let maxTotal = 0;
 
-        // Helper to parse any date input (String, Date, Timestamp) into local Y/M/D
-        const parseDate = (dateBox) => {
-            const d = new Date(dateBox);
-            return {
-                year: d.getFullYear(),
-                month: d.getMonth() + 1, // 1-12
-                day: d.getDate(),
-                fullDate: d
-            };
+        // Helper to format date as YYYY-MM-DD for lookup
+        const formatDateKey = (d) => {
+            return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
         };
 
-        // Filter history data based on selected month
-        let filteredData = [];
-
-        if (selectedMonth === 'current') {
-            // Last 30 days
-            const thirtyDaysAgo = new Date(today);
-            thirtyDaysAgo.setDate(today.getDate() - 30);
-
-            // Set boundaries to start/end of days to be inclusive
-            thirtyDaysAgo.setHours(0, 0, 0, 0);
-            const endToday = new Date(today);
-            endToday.setHours(23, 59, 59, 999);
-
-            filteredData = historyData.filter(day => {
-                const { fullDate } = parseDate(day.date);
-                return fullDate >= thirtyDaysAgo && fullDate <= endToday;
-            });
-        } else {
-            // Selected month: "YYYY-MM"
-            const [targetYear, targetMonth] = selectedMonth.split('-').map(Number);
-
-            filteredData = historyData.filter(day => {
-                const { year, month } = parseDate(day.date);
-                return year === targetYear && month === targetMonth;
-            });
-        }
-
-        // Sort by time
-        filteredData.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-
-        // Find max total
-        filteredData.forEach(day => {
+        // Create a map of date -> data for quick lookup
+        const dataMap = {};
+        historyData.forEach(day => {
+            const dateKey = day.date.split('T')[0]; // Normalize to YYYY-MM-DD
+            dataMap[dateKey] = day;
             if ((day.total || 0) > maxTotal) maxTotal = day.total || 0;
         });
         if (maxTotal === 0) maxTotal = 81;
 
-        // Generate labels and data
-        const labels = filteredData.map(day => {
-            const { fullDate } = parseDate(day.date);
-            return fullDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-        });
+        // Generate all days for the range
+        let allDays = [];
 
-        // Explicitly cast to Number
-        const completed = filteredData.map(day => Number(day.completed) || 0);
+        if (selectedMonth === 'current') {
+            // Last 30 days including today
+            for (let i = 29; i >= 0; i--) {
+                const d = new Date(today);
+                d.setDate(today.getDate() - i);
+                d.setHours(0, 0, 0, 0);
+                allDays.push(d);
+            }
+        } else {
+            // Selected month: "YYYY-MM" - generate all days of that month
+            const [targetYear, targetMonth] = selectedMonth.split('-').map(Number);
+            const daysInMonth = new Date(targetYear, targetMonth, 0).getDate();
+
+            for (let day = 1; day <= daysInMonth; day++) {
+                allDays.push(new Date(targetYear, targetMonth - 1, day));
+            }
+        }
+
+        // Generate labels and data for ALL days
+        const labels = allDays.map(d =>
+            d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+        );
+
+        const completed = allDays.map(d => {
+            const key = formatDateKey(d);
+            return dataMap[key] ? Number(dataMap[key].completed) || 0 : 0;
+        });
 
         return {
             labels,

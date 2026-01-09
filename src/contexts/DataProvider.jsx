@@ -21,7 +21,6 @@ export function DataProvider({ children }) {
     const [matrixTasks, setMatrixTasks] = useState([]);
     const [historyData, setHistoryData] = useState([]);
     const [semesterGoals, setSemesterGoals] = useState([]); // New state for goals
-    const [semesterGoals, setSemesterGoals] = useState([]); // New state for goals
     const [dailyLesson, setDailyLesson] = useState(null);
     const [dailyQuote, setDailyQuote] = useState(null);
     const [dailyAnalysis, setDailyAnalysis] = useState(null); // Cached AI analysis
