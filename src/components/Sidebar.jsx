@@ -1,5 +1,5 @@
-import React from 'react';
-import { NavLink, useNavigate } from 'react-router-dom';
+import React, { useState } from 'react';
+import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useData } from '../contexts/DataProvider';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -7,19 +7,85 @@ import {
     faMugHot, faBrain, faBookOpen, faMoon, faListCheck,
     faTableCellsLarge, faPenNib, faChartLine, faSitemap, faBullseye,
     faRightFromBracket, faXmark, faQuoteRight, faFilm, faShieldHalved,
-    faBan, faCircleCheck, faToolbox, faGraduationCap, faClockRotateLeft
+    faBan, faCircleCheck, faToolbox, faGraduationCap, faClockRotateLeft,
+    faChevronDown, faChevronRight, faSun, faLightbulb, faScroll, faRocket, faCalendarDays
 } from '@fortawesome/free-solid-svg-icons';
 import { faYoutube } from '@fortawesome/free-brands-svg-icons';
 import { motion, AnimatePresence } from 'framer-motion';
-import { tabList } from '../data/staticData';
 
 // Icon mapping
 const iconMap = {
     faMugHot, faBrain, faBookOpen, faMoon, faListCheck,
     faTableCellsLarge, faPenNib, faChartLine, faSitemap, faBullseye,
     faQuoteRight, faFilm, faShieldHalved, faBan, faCircleCheck,
-    faToolbox, faGraduationCap, faYoutube, faClockRotateLeft
+    faToolbox, faGraduationCap, faYoutube, faClockRotateLeft,
+    faSun, faLightbulb, faScroll, faRocket, faCalendarDays
 };
+
+// Grouped tab configuration
+const sidebarGroups = [
+    {
+        id: 'routine',
+        label: 'Daily Routine',
+        icon: faSun,
+        items: [
+            { id: 'morning', label: 'Morning', icon: 'faMugHot' },
+            { id: 'deepWork', label: 'Deep Work', icon: 'faBrain' },
+            { id: 'night', label: 'Night', icon: 'faMoon' },
+        ]
+    },
+    {
+        id: 'productivity',
+        label: 'Productivity',
+        icon: faRocket,
+        items: [
+            { id: 'tasks', label: 'Daily Tasks', icon: 'faListCheck' },
+            { id: 'matrix', label: 'Priority Matrix', icon: 'faTableCellsLarge' },
+            { id: 'journal', label: 'Journal', icon: 'faPenNib' },
+        ]
+    },
+    {
+        id: 'inspiration',
+        label: 'Inspiration',
+        icon: faLightbulb,
+        items: [
+            { id: 'lesson', label: 'Daily Lesson', icon: 'faYoutube' },
+            { id: 'quote', label: 'Stoic Quote', icon: 'faQuoteRight' },
+            { id: 'vault', label: 'Motivation Vault', icon: 'faFilm' },
+        ]
+    },
+    {
+        id: 'principles',
+        label: 'My Principles',
+        icon: faScroll,
+        items: [
+            { id: 'commitments', label: 'Rules', icon: 'faShieldHalved' },
+            { id: 'neverDo', label: 'Never Do', icon: 'faBan' },
+            { id: 'mustDo', label: 'Must Do', icon: 'faCircleCheck' },
+        ]
+    },
+    {
+        id: 'growth',
+        label: 'Growth',
+        icon: faChartLine,
+        items: [
+            { id: 'learning', label: 'Learning', icon: 'faBookOpen' },
+            { id: 'skills', label: 'Skills', icon: 'faToolbox' },
+            { id: 'skillMap', label: 'Skill Map', icon: 'faSitemap' },
+        ]
+    },
+    {
+        id: 'planning',
+        label: 'Planning & Review',
+        icon: faCalendarDays,
+        items: [
+            { id: 'semesterGoals', label: 'Semester Goals', icon: 'faGraduationCap' },
+            { id: 'goal', label: 'Main Goal', icon: 'faBullseye' },
+            { id: 'analysis', label: 'Analysis', icon: 'faChartLine' },
+            { id: 'history', label: 'History', icon: 'faClockRotateLeft' },
+        ]
+    },
+];
 
 export default function Sidebar({ isOpen, onClose }) {
     const { logout } = useAuth();
@@ -76,14 +142,34 @@ export default function Sidebar({ isOpen, onClose }) {
 }
 
 function SidebarContent({ onLogout, onClose, isMobile, level }) {
+    const location = useLocation();
+    const currentPath = location.pathname.split('/').pop();
+
+    // Track which groups are expanded - auto-expand group containing current tab
+    const [expandedGroups, setExpandedGroups] = useState(() => {
+        const initialExpanded = {};
+        sidebarGroups.forEach(group => {
+            const hasActiveItem = group.items.some(item => item.id === currentPath);
+            initialExpanded[group.id] = hasActiveItem;
+        });
+        return initialExpanded;
+    });
+
+    const toggleGroup = (groupId) => {
+        setExpandedGroups(prev => ({
+            ...prev,
+            [groupId]: !prev[groupId]
+        }));
+    };
+
     return (
         <>
-            <div className="p-6 border-b border-white/5 flex justify-between items-center">
+            <div className="p-5 border-b border-white/5 flex justify-between items-center">
                 <div>
-                    <h1 className="header-font text-3xl md:text-4xl text-transparent bg-clip-text bg-gradient-to-r from-fire-yellow to-fire-red leading-tight">
+                    <h1 className="header-font text-2xl md:text-3xl text-transparent bg-clip-text bg-gradient-to-r from-fire-yellow to-fire-red leading-tight">
                         HABIT<br />DASHBOARD
                     </h1>
-                    <p className="text-[10px] text-gray-500 uppercase tracking-widest mt-1">Level {level} • Dashboard v2.0</p>
+                    <p className="text-[10px] text-gray-500 uppercase tracking-widest mt-1">Level {level} • v2.0</p>
                 </div>
                 {isMobile && (
                     <button onClick={onClose} className="text-gray-400 hover:text-white">
@@ -92,39 +178,79 @@ function SidebarContent({ onLogout, onClose, isMobile, level }) {
                 )}
             </div>
 
-            <nav className="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-2">
-                {tabList.map(tab => (
-                    <NavLink
-                        key={tab.id}
-                        to={`/dashboard/${tab.id}`}
-                        onClick={isMobile ? onClose : undefined}
-                        className={({ isActive }) =>
-                            `w-full flex items-center gap-4 px-4 py-3 rounded-xl text-left transition-all font-medium text-sm md:text-base cursor-pointer
-                            ${isActive
-                                ? 'bg-white/10 text-white shadow-[0_0_10px_rgba(255,157,0,0.5)] scale-105'
-                                : 'text-gray-400 hover:text-white hover:bg-white/5'
-                            }`
-                        }
-                    >
-                        {({ isActive }) => (
-                            <>
-                                <div className="w-8 flex justify-center">
-                                    <FontAwesomeIcon icon={iconMap[tab.icon] || faBullseye} className={isActive ? 'text-fire-yellow' : ''} />
+            <nav className="flex-1 overflow-y-auto custom-scrollbar p-3 space-y-1">
+                {sidebarGroups.map(group => {
+                    const isExpanded = expandedGroups[group.id];
+                    const hasActiveItem = group.items.some(item => item.id === currentPath);
+
+                    return (
+                        <div key={group.id} className="mb-1">
+                            {/* Group Header */}
+                            <button
+                                onClick={() => toggleGroup(group.id)}
+                                className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-left transition-all text-sm
+                                    ${hasActiveItem
+                                        ? 'text-fire-orange bg-fire-orange/10'
+                                        : 'text-gray-400 hover:text-white hover:bg-white/5'
+                                    }`}
+                            >
+                                <div className="flex items-center gap-3">
+                                    <FontAwesomeIcon icon={group.icon} className={hasActiveItem ? 'text-fire-orange' : ''} />
+                                    <span className="font-medium">{group.label}</span>
                                 </div>
-                                <span>{tab.label}</span>
-                            </>
-                        )}
-                    </NavLink>
-                ))}
+                                <FontAwesomeIcon
+                                    icon={isExpanded ? faChevronDown : faChevronRight}
+                                    className="text-xs opacity-50"
+                                />
+                            </button>
+
+                            {/* Group Items */}
+                            <AnimatePresence>
+                                {isExpanded && (
+                                    <motion.div
+                                        initial={{ height: 0, opacity: 0 }}
+                                        animate={{ height: 'auto', opacity: 1 }}
+                                        exit={{ height: 0, opacity: 0 }}
+                                        transition={{ duration: 0.2 }}
+                                        className="overflow-hidden"
+                                    >
+                                        <div className="pl-4 mt-1 space-y-0.5">
+                                            {group.items.map(item => (
+                                                <NavLink
+                                                    key={item.id}
+                                                    to={`/dashboard/${item.id}`}
+                                                    onClick={isMobile ? onClose : undefined}
+                                                    className={({ isActive }) =>
+                                                        `w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-all text-sm
+                                                        ${isActive
+                                                            ? 'bg-white/10 text-white shadow-[0_0_8px_rgba(255,157,0,0.4)]'
+                                                            : 'text-gray-500 hover:text-white hover:bg-white/5'
+                                                        }`
+                                                    }
+                                                >
+                                                    <FontAwesomeIcon
+                                                        icon={iconMap[item.icon] || faBullseye}
+                                                        className="text-xs w-4"
+                                                    />
+                                                    <span>{item.label}</span>
+                                                </NavLink>
+                                            ))}
+                                        </div>
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
+                        </div>
+                    );
+                })}
             </nav>
 
-            <div className="p-4 border-t border-white/5 bg-black/20">
+            <div className="p-3 border-t border-white/5 bg-black/20">
                 <button
                     onClick={onLogout}
-                    className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-gray-400 hover:text-white hover:bg-white/5 transition-all"
+                    className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-gray-400 hover:text-white hover:bg-white/5 transition-all text-sm"
                 >
                     <FontAwesomeIcon icon={faRightFromBracket} />
-                    <span className="font-medium text-sm">Sign Out</span>
+                    <span className="font-medium">Sign Out</span>
                 </button>
             </div>
         </>
