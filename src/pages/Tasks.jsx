@@ -256,21 +256,38 @@ export default function Tasks() {
                             <p className="text-gray-500">No tasks yet. Add one above!</p>
                         </div>
                     ) : (
-                        dailyTasks.map((task) => (
-                            <div key={task.id} className={`group flex items-center gap-3 p-3 rounded-xl border transition-all ${task.done ? 'bg-green-900/20 border-green-500/20' : 'bg-white/5 border-white/10 hover:bg-white/10'}`}>
-                                <label className="flex items-center gap-3 flex-1 cursor-pointer">
-                                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${task.done ? 'bg-green-500 border-green-500' : 'border-gray-500'}`}>
-                                        <input type="checkbox" checked={task.done} onChange={(e) => toggleDailyTask(task.id, e.target.checked)} className="sr-only" />
-                                        {task.done && <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}
+                        dailyTasks.map((task) => {
+                            // Calculate task age
+                            const createdDate = new Date(task.createdAt);
+                            const today = new Date();
+                            today.setHours(0, 0, 0, 0);
+                            createdDate.setHours(0, 0, 0, 0);
+                            const daysOld = Math.floor((today - createdDate) / (1000 * 60 * 60 * 24));
+                            const isOld = daysOld > 0;
+
+                            return (
+                                <div key={task.id} className={`group flex items-center gap-3 p-3 rounded-xl border transition-all ${task.done ? 'bg-green-900/20 border-green-500/20' : 'bg-white/5 border-white/10 hover:bg-white/10'}`}>
+                                    <label className="flex items-center gap-3 flex-1 cursor-pointer">
+                                        <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${task.done ? 'bg-green-500 border-green-500' : 'border-gray-500'}`}>
+                                            <input type="checkbox" checked={task.done} onChange={(e) => toggleDailyTask(task.id, e.target.checked)} className="sr-only" />
+                                            {task.done && <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}
+                                        </div>
+                                        <div className="flex-1">
+                                            <span className={`text-sm ${task.done ? 'line-through text-gray-500' : 'text-white'}`}>{task.text}</span>
+                                            {isOld && !task.done && (
+                                                <span className="ml-2 text-xs text-orange-400 bg-orange-900/30 px-2 py-0.5 rounded-md font-medium">
+                                                    {daysOld === 1 ? 'Yesterday' : `${daysOld} days ago`}
+                                                </span>
+                                            )}
+                                        </div>
+                                    </label>
+                                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        {!task.done && <button onClick={() => handleMagicWand(task)} className="text-indigo-400 hover:text-indigo-300 p-2" title="AI breakdown"><FontAwesomeIcon icon={faWandMagicSparkles} /></button>}
+                                        <button onClick={() => handleDelete(task.id)} className="text-red-400 hover:text-red-300 p-2" title="Delete"><FontAwesomeIcon icon={faTrash} /></button>
                                     </div>
-                                    <span className={`text-sm ${task.done ? 'line-through text-gray-500' : 'text-white'}`}>{task.text}</span>
-                                </label>
-                                <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    {!task.done && <button onClick={() => handleMagicWand(task)} className="text-indigo-400 hover:text-indigo-300 p-2" title="AI breakdown"><FontAwesomeIcon icon={faWandMagicSparkles} /></button>}
-                                    <button onClick={() => handleDelete(task.id)} className="text-red-400 hover:text-red-300 p-2" title="Delete"><FontAwesomeIcon icon={faTrash} /></button>
                                 </div>
-                            </div>
-                        ))
+                            );
+                        })
                     )}
                 </div>
             </div>

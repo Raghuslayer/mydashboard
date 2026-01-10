@@ -120,13 +120,27 @@ export default function Analysis() {
                 // For past months, missing records usually mean no activity
                 const totalMissedDays = Math.max(0, daysInMonth - month.days.length);
 
-                // Consistency Score (Standard Deviation)
-                // We must include the "0" days in the variation calculation for accuracy
+                // Consistency Score (Activity Rate + Completion Stability)
+                // True consistency = showing up regularly + stable performance
                 const allCompletedCounts = [...month.completed, ...Array(totalMissedDays).fill(0)];
-                const mean = allCompletedCounts.reduce((a, b) => a + b, 0) / allCompletedCounts.length;
-                const variance = allCompletedCounts.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / allCompletedCounts.length;
-                const stdDev = Math.sqrt(variance);
-                const consistencyScore = Math.max(0, Math.round(100 - (stdDev * 5)));
+
+                // 1. Activity Rate: % of days with any activity (non-zero completion)
+                const activeDays = allCompletedCounts.filter(c => c > 0).length;
+                const activityRate = activeDays / allCompletedCounts.length;
+
+                // 2. Completion Stability: CV (Coefficient of Variation) among active days only
+                const activeCounts = allCompletedCounts.filter(c => c > 0);
+                let stabilityScore = 0;
+                if (activeCounts.length > 0) {
+                    const activeMean = activeCounts.reduce((a, b) => a + b, 0) / activeCounts.length;
+                    const activeVariance = activeCounts.reduce((a, b) => a + Math.pow(b - activeMean, 2), 0) / activeCounts.length;
+                    const activeStdDev = Math.sqrt(activeVariance);
+                    const cv = activeMean > 0 ? activeStdDev / activeMean : 1; // Coefficient of Variation
+                    stabilityScore = Math.max(0, 1 - cv); // Lower CV = more stable (better)
+                }
+
+                // 3. Combined Score: Weight activity heavily (70%) and stability moderately (30%)
+                const consistencyScore = Math.round((activityRate * 70) + (stabilityScore * 30));
 
                 return {
                     name: month.name,
@@ -194,15 +208,26 @@ export default function Analysis() {
             const avgCompleted = Math.round(totalCompleted / fullHistory.length) || 0;
             const totalMissedDays = fullHistory.filter(d => (d.completed || 0) === 0).length;
 
-            // 2. Consistency Score (Standard Deviation)
+            // 2. Consistency Score (Activity Rate + Completion Stability)
             const completedCounts = fullHistory.map(d => d.completed || 0);
-            const mean = completedCounts.reduce((a, b) => a + b, 0) / completedCounts.length;
-            const variance = completedCounts.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / completedCounts.length;
-            const stdDev = Math.sqrt(variance);
-            // Score: 100 - (CV * 100) where CV is Coefficient of Variation, simplified mapping
-            // Lower StdDev relative to mean is better. 
-            // Simple robust linear map: 0 stdDev -> 100, High stdDev -> Lower score
-            const consistencyScore = Math.max(0, Math.round(100 - (stdDev * 5)));
+
+            // Activity Rate: % of days with any activity (non-zero completion)
+            const activeDays = completedCounts.filter(c => c > 0).length;
+            const activityRate = activeDays / completedCounts.length;
+
+            // Completion Stability: CV (Coefficient of Variation) among active days only
+            const activeCounts = completedCounts.filter(c => c > 0);
+            let stabilityScore = 0;
+            if (activeCounts.length > 0) {
+                const activeMean = activeCounts.reduce((a, b) => a + b, 0) / activeCounts.length;
+                const activeVariance = activeCounts.reduce((a, b) => a + Math.pow(b - activeMean, 2), 0) / activeCounts.length;
+                const activeStdDev = Math.sqrt(activeVariance);
+                const cv = activeMean > 0 ? activeStdDev / activeMean : 1;
+                stabilityScore = Math.max(0, 1 - cv);
+            }
+
+            // Combined Score: Weight activity heavily (70%) and stability moderately (30%)
+            const consistencyScore = Math.round((activityRate * 70) + (stabilityScore * 30));
             const finalConsistencyScore = Number.isFinite(consistencyScore) ? consistencyScore : 0;
 
             // Streak
@@ -233,7 +258,6 @@ export default function Analysis() {
                 totalCompleted,
                 maxStreak,
                 bestDay,
-                worstDays,
                 worstDays,
                 consistencyScore: finalConsistencyScore,
                 totalMissedDays

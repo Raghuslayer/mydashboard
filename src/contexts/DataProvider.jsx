@@ -3,7 +3,7 @@ import { useAuth } from './AuthContext';
 import { db } from '../services/firebase';
 import { doc, getDoc, setDoc, collection, getDocs } from 'firebase/firestore';
 import { debounce } from '../utils/debounce';
-import { staticData } from '../data/staticData';
+import { staticData, routineTabs } from '../data/staticData';
 
 const DataContext = createContext();
 
@@ -75,6 +75,11 @@ export function DataProvider({ children }) {
         await setDoc(doc(db, `artifacts/${getAppId()}/users/${uid}/daily_task_history`, date), stats, { merge: true });
     }, 2000), []);
 
+    // Save daily history summary (total and completed tasks) for History and Analysis pages
+    const saveDailyHistory = useCallback(debounce(async (uid, date, stats) => {
+        await setDoc(doc(db, `artifacts/${getAppId()}/users/${uid}/daily_history`, date), stats, { merge: true });
+    }, 2000), []);
+
     const saveDailyLesson = async (uid, date, lesson) => {
         await setDoc(doc(db, `artifacts/${getAppId()}/users/${uid}/daily_content`, date), { lesson }, { merge: true });
     };
@@ -86,6 +91,102 @@ export function DataProvider({ children }) {
     const saveDailyAnalysis = async (uid, date, analysis) => {
         await setDoc(doc(db, `artifacts/${getAppId()}/users/${uid}/daily_content`, date), { analysis }, { merge: true });
     };
+
+    // ===== HELPER FUNCTION: Calculate Daily Stats =====
+
+    // Calculate total and completed tasks from all sources (routine tasks + daily tasks)
+    function calculateDailyStats(currentCheckedStates, currentDailyTasks, currentCustomRoutineTasks) {
+        let completed = 0;
+        let total = 0;
+
+        // Count routine tasks from all tabs
+        routineTabs.forEach(tabId => {
+            const isEditable = editableRoutineTabs.includes(tabId);
+            const items = isEditable ? (currentCustomRoutineTasks[tabId] || []) : (staticData[tabId] || []);
+            total += items.length;
+
+            const tabState = currentCheckedStates[tabId] || {};
+            if (isEditable && typeof tabState === 'object' && !Array.isArray(tabState)) {
+                // ID-based counting for editable tabs
+                completed += Object.values(tabState).filter(Boolean).length;
+            } else {
+                // Index-based counting for legacy tabs
+                const states = Array.isArray(tabState) ? tabState : Object.values(tabState);
+                completed += states.filter(Boolean).length;
+            }
+        });
+
+        // Count daily tasks
+        total += currentDailyTasks.length;
+        completed += currentDailyTasks.filter(t => t.done).length;
+
+        return { total, completed };
+    }
+
+    // ===== CLEANUP: Old Completed Daily Tasks =====
+
+    // Clean up old completed daily tasks to optimize Firebase storage
+    // Keeps: uncompleted tasks (carry over), today's tasks
+    // Archives: old completed tasks as stats only
+    async function cleanupOldDailyTasks(currentTasks, currentUser) {
+        if (!currentUser || !currentTasks || currentTasks.length === 0) return currentTasks;
+
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const todayTimestamp = today.getTime();
+
+        // Separate tasks by category
+        const oldCompletedTasks = [];
+        const oldUncompletedTasks = [];
+        const todaysTasks = [];
+
+        currentTasks.forEach(task => {
+            const taskDate = new Date(task.createdAt);
+            taskDate.setHours(0, 0, 0, 0);
+            const taskTimestamp = taskDate.getTime();
+
+            if (taskTimestamp < todayTimestamp) {
+                // Task from previous day
+                if (task.done) {
+                    oldCompletedTasks.push(task);
+                } else {
+                    oldUncompletedTasks.push(task); // Keep uncompleted
+                }
+            } else {
+                // Task from today
+                todaysTasks.push(task);
+            }
+        });
+
+        // Archive old completed tasks (stats only, delete task objects)
+        if (oldCompletedTasks.length > 0) {
+            // Group by date
+            const tasksByDate = {};
+            oldCompletedTasks.forEach(task => {
+                const dateKey = new Date(task.createdAt).toISOString().split('T')[0];
+                if (!tasksByDate[dateKey]) {
+                    tasksByDate[dateKey] = { completed: 0, total: 0 };
+                }
+                tasksByDate[dateKey].completed += task.done ? 1 : 0;
+                tasksByDate[dateKey].total += 1;
+            });
+
+            // Save stats for each date
+            const appId = getAppId();
+            for (const [date, stats] of Object.entries(tasksByDate)) {
+                const percent = stats.total > 0 ? Math.round((stats.completed / stats.total) * 100) : 0;
+                await setDoc(
+                    doc(db, `artifacts/${appId}/users/${currentUser.uid}/daily_task_history`, date),
+                    { total: stats.total, completed: stats.completed, percent },
+                    { merge: true }
+                );
+            }
+        }
+
+        // Return only uncompleted old tasks + today's tasks
+        const cleanedTasks = [...oldUncompletedTasks, ...todaysTasks];
+        return cleanedTasks;
+    }
 
     // ===== LOAD DATA =====
 
@@ -118,7 +219,17 @@ export function DataProvider({ children }) {
 
                 // 4. Daily Tasks
                 const tSnap = await getDoc(doc(db, `artifacts/${appId}/users/${uid}/user_data`, 'daily_tasks'));
-                if (tSnap.exists()) setDailyTasks(tSnap.data().tasks || []);
+                let loadedTasks = tSnap.exists() ? tSnap.data().tasks || [] : [];
+
+                // Clean up old completed tasks (archive stats, keep only uncompleted + today's)
+                const originalLength = loadedTasks.length;
+                loadedTasks = await cleanupOldDailyTasks(loadedTasks, currentUser);
+                setDailyTasks(loadedTasks);
+
+                // Save cleaned tasks back to Firebase if cleanup removed items
+                if (originalLength !== loadedTasks.length) {
+                    await setDoc(doc(db, `artifacts/${appId}/users/${uid}/user_data`, 'daily_tasks'), { tasks: loadedTasks });
+                }
 
                 // 5. Journal
                 const jSnap = await getDoc(doc(db, `artifacts/${appId}/users/${uid}/user_data`, 'journal'));
@@ -242,6 +353,10 @@ export function DataProvider({ children }) {
             if (currentUser) {
                 const today = new Date().toISOString().split('T')[0];
                 saveProgress(currentUser.uid, today, newState);
+
+                // Calculate and save daily history summary
+                const stats = calculateDailyStats(newState, dailyTasks, customRoutineTasks);
+                saveDailyHistory(currentUser.uid, today, stats);
             }
             addXP(isChecked ? 5 : -5);
             return newState;
@@ -340,6 +455,11 @@ export function DataProvider({ children }) {
                 saveTasks(currentUser.uid, newState);
                 // Update daily task stats
                 updateDailyTaskStats(newState);
+
+                // Calculate and save daily history summary
+                const today = new Date().toISOString().split('T')[0];
+                const stats = calculateDailyStats(checkedStates, newState, customRoutineTasks);
+                saveDailyHistory(currentUser.uid, today, stats);
             }
             addXP(isChecked ? 5 : -5);
             return newState;
