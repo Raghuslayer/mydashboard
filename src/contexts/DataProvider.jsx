@@ -438,6 +438,36 @@ export function DataProvider({ children }) {
         });
     }
 
+    // Reorder routine tasks (for drag-and-drop)
+    function reorderRoutineTask(tabId, oldIndex, newIndex) {
+        if (!editableRoutineTabs.includes(tabId)) return;
+        if (oldIndex === newIndex) return;
+
+        setCustomRoutineTasks(prev => {
+            const tasks = prev[tabId] || [];
+            if (oldIndex < 0 || oldIndex >= tasks.length || newIndex < 0 || newIndex >= tasks.length) {
+                console.error('Invalid indices for reordering');
+                return prev;
+            }
+
+            // Create a new array with the reordered tasks
+            const newTasks = [...tasks];
+            const [movedTask] = newTasks.splice(oldIndex, 1);
+            newTasks.splice(newIndex, 0, movedTask);
+
+            const newState = {
+                ...prev,
+                [tabId]: newTasks
+            };
+
+            if (currentUser) {
+                saveRoutineTasks(currentUser.uid, newState);
+            }
+
+            return newState;
+        });
+    }
+
     // Daily Tasks
     function addDailyTask(text) {
         const newTask = { id: crypto.randomUUID(), text, done: false, createdAt: Date.now() };
@@ -591,6 +621,7 @@ export function DataProvider({ children }) {
         addRoutineTask,        // Add new routine task
         updateRoutineTask,     // Update routine task
         deleteRoutineTask,     // Delete routine task
+        reorderRoutineTask,    // Reorder routine tasks (drag-and-drop)
         editableRoutineTabs,   // Which tabs are editable
         addDailyTask,
         toggleDailyTask,

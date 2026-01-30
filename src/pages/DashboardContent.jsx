@@ -13,6 +13,7 @@ export default function DashboardContent() {
         addRoutineTask,
         updateRoutineTask,
         deleteRoutineTask,
+        reorderRoutineTask,
         editableRoutineTabs
     } = useData();
 
@@ -66,6 +67,12 @@ export default function DashboardContent() {
         }
     };
 
+    const handleReorderTask = (oldIndex, newIndex) => {
+        if (reorderRoutineTask) {
+            reorderRoutineTask(tabId, oldIndex, newIndex);
+        }
+    };
+
     return (
         <TileGrid
             items={items}
@@ -77,6 +84,7 @@ export default function DashboardContent() {
             onAddTask={handleAddTask}
             onEditTask={handleEditTask}
             onDeleteTask={handleDeleteTask}
+            onReorderTask={handleReorderTask}
         />
     );
 }

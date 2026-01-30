@@ -1,17 +1,70 @@
 import React, { useState } from 'react';
 import { useData } from '../contexts/DataProvider';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faCheck, faPlay, faList, faPen, faTrash, faPlus, faExclamationTriangle } from '@fortawesome/free-solid-svg-icons';
+import { faCheck, faPlay, faList, faPen, faTrash, faPlus, faExclamationTriangle, faGripVertical } from '@fortawesome/free-solid-svg-icons';
 import Modal from './Modal';
 import TaskFormModal from './TaskFormModal';
+import {
+    DndContext,
+    closestCenter,
+    KeyboardSensor,
+    PointerSensor,
+    useSensor,
+    useSensors,
+} from '@dnd-kit/core';
+import {
+    arrayMove,
+    SortableContext,
+    sortableKeyboardCoordinates,
+    useSortable,
+    verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
-export default function TileGrid({ items, tabId, isRoutine, checkedStates, onTileClick, isEditable, onAddTask, onEditTask, onDeleteTask }) {
+// Sortable Tile Component
+function SortableTile({ item, index, children, isDraggable }) {
+    const {
+        attributes,
+        listeners,
+        setNodeRef,
+        transform,
+        transition,
+        isDragging,
+    } = useSortable({ id: item.id, disabled: !isDraggable });
+
+    const style = {
+        transform: CSS.Transform.toString(transform),
+        transition,
+        opacity: isDragging ? 0.5 : 1,
+        zIndex: isDragging ? 1000 : 'auto',
+    };
+
+    return (
+        <div ref={setNodeRef} style={style}>
+            {children({ dragHandleProps: isDraggable ? { ...attributes, ...listeners } : null })}
+        </div>
+    );
+}
+
+export default function TileGrid({ items, tabId, isRoutine, checkedStates, onTileClick, isEditable, onAddTask, onEditTask, onDeleteTask, onReorderTask }) {
     const [selectedItem, setSelectedItem] = useState(null);
     const [showModal, setShowModal] = useState(false);
 
     // Task form modal state
     const [showTaskForm, setShowTaskForm] = useState(false);
     const [editingTask, setEditingTask] = useState(null);
+
+    // Drag-and-drop sensors
+    const sensors = useSensors(
+        useSensor(PointerSensor, {
+            activationConstraint: {
+                distance: 8, // Require 8px movement before drag starts
+            },
+        }),
+        useSensor(KeyboardSensor, {
+            coordinateGetter: sortableKeyboardCoordinates,
+        })
+    );
 
     // Delete confirmation state
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -70,6 +123,20 @@ export default function TileGrid({ items, tabId, isRoutine, checkedStates, onTil
         setShowTaskForm(true);
     };
 
+    // Handle drag end
+    const handleDragEnd = (event) => {
+        const { active, over } = event;
+
+        if (!over || active.id === over.id) return;
+
+        const oldIndex = items.findIndex(item => item.id === active.id);
+        const newIndex = items.findIndex(item => item.id === over.id);
+
+        if (oldIndex !== -1 && newIndex !== -1 && onReorderTask) {
+            onReorderTask(oldIndex, newIndex);
+        }
+    };
+
     // Helper to get checked state for task (supports both ID and index)
     const getCheckedState = (item, index) => {
         if (item.id && typeof checkedStates === 'object' && !Array.isArray(checkedStates)) {
@@ -78,98 +145,122 @@ export default function TileGrid({ items, tabId, isRoutine, checkedStates, onTil
         return checkedStates[index] || false;
     };
 
+    const isDraggable = isEditable && items.length > 1;
+    const itemIds = items.map(item => item.id);
+
     return (
         <>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 animate-in">
-                {items.map((item, index) => {
-                    const isChecked = getCheckedState(item, index);
-                    const hasVideo = !!item.videoUrl;
-                    const hasContext = !!item.contextItems;
+            <DndContext
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragEnd={handleDragEnd}
+            >
+                <SortableContext items={itemIds} strategy={verticalListSortingStrategy}>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 animate-in">
+                        {items.map((item, index) => {
+                            const isChecked = getCheckedState(item, index);
+                            const hasVideo = !!item.videoUrl;
+                            const hasContext = !!item.contextItems;
 
-                    return (
-                        <div
-                            key={item.id || index}
-                            onClick={() => handleClick(item.id || index, item)}
-                            className={`tile group relative h-48 rounded-2xl overflow-hidden cursor-pointer ${isChecked ? 'opacity-50 grayscale' : ''}`}
-                            style={{ animationDelay: `${index * 0.05}s` }}
-                        >
-                            {/* Background Image */}
-                            <div className="absolute inset-0 z-0">
-                                {item.thumbnail && (
-                                    <img
-                                        src={item.thumbnail}
-                                        alt={item.title}
-                                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                                    />
-                                )}
-                                <div className={`absolute inset-0 bg-gradient-to-t ${isChecked ? 'from-green-900/90 to-black/60' : 'from-black/90 via-black/50 to-transparent'}`}></div>
-                            </div>
+                            return (
+                                <SortableTile key={item.id || index} item={item} index={index} isDraggable={isDraggable}>
+                                    {({ dragHandleProps }) => (
+                                        <div
+                                            onClick={() => handleClick(item.id || index, item)}
+                                            className={`tile group relative h-48 rounded-2xl overflow-hidden cursor-pointer ${isChecked ? 'opacity-50 grayscale' : ''}`}
+                                            style={{ animationDelay: `${index * 0.05}s` }}
+                                        >
+                                            {/* Background Image */}
+                                            <div className="absolute inset-0 z-0">
+                                                {item.thumbnail && (
+                                                    <img
+                                                        src={item.thumbnail}
+                                                        alt={item.title}
+                                                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                                                    />
+                                                )}
+                                                <div className={`absolute inset-0 bg-gradient-to-t ${isChecked ? 'from-green-900/90 to-black/60' : 'from-black/90 via-black/50 to-transparent'}`}></div>
+                                            </div>
 
-                            {/* Check Overlay */}
-                            {isChecked && (
-                                <div className="absolute inset-0 flex items-center justify-center z-10">
-                                    <div className="bg-green-500 rounded-full w-12 h-12 flex items-center justify-center shadow-[0_0_20px_rgba(34,197,94,0.6)]">
-                                        <FontAwesomeIcon icon={faCheck} className="text-white text-xl" />
+                                            {/* Check Overlay */}
+                                            {isChecked && (
+                                                <div className="absolute inset-0 flex items-center justify-center z-10">
+                                                    <div className="bg-green-500 rounded-full w-12 h-12 flex items-center justify-center shadow-[0_0_20px_rgba(34,197,94,0.6)]">
+                                                        <FontAwesomeIcon icon={faCheck} className="text-white text-xl" />
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {/* Drag Handle + Edit/Delete Buttons (for editable tabs) */}
+                                            {isEditable && (
+                                                <div className="absolute top-4 left-4 z-20 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                    {dragHandleProps && (
+                                                        <div
+                                                            {...dragHandleProps}
+                                                            className="bg-gray-700 hover:bg-gray-600 w-8 h-8 rounded-full flex items-center justify-center shadow-lg transition-colors cursor-grab active:cursor-grabbing"
+                                                            title="Drag to reorder"
+                                                            onClick={(e) => e.stopPropagation()}
+                                                        >
+                                                            <FontAwesomeIcon icon={faGripVertical} className="text-white text-xs" />
+                                                        </div>
+                                                    )}
+                                                    <button
+                                                        onClick={(e) => handleEditClick(e, item)}
+                                                        className="bg-blue-600 hover:bg-blue-500 w-8 h-8 rounded-full flex items-center justify-center shadow-lg transition-colors"
+                                                        title="Edit task"
+                                                    >
+                                                        <FontAwesomeIcon icon={faPen} className="text-white text-xs" />
+                                                    </button>
+                                                    <button
+                                                        onClick={(e) => handleDeleteClick(e, item)}
+                                                        className="bg-red-600 hover:bg-red-500 w-8 h-8 rounded-full flex items-center justify-center shadow-lg transition-colors"
+                                                        title="Delete task"
+                                                    >
+                                                        <FontAwesomeIcon icon={faTrash} className="text-white text-xs" />
+                                                    </button>
+                                                </div>
+                                            )}
+
+                                            {/* Badges */}
+                                            <div className="absolute top-4 right-4 z-10 flex gap-2">
+                                                {hasVideo && <div className="bg-red-600 w-8 h-8 rounded-full flex items-center justify-center shadow-lg"><FontAwesomeIcon icon={faPlay} className="text-white text-xs" /></div>}
+                                                {hasContext && <div className="bg-blue-600 w-8 h-8 rounded-full flex items-center justify-center shadow-lg"><FontAwesomeIcon icon={faList} className="text-white text-xs" /></div>}
+                                            </div>
+
+                                            {/* Content */}
+                                            <div className="absolute bottom-0 left-0 w-full p-6 z-10">
+                                                <h3 className={`header-font text-2xl leading-none mb-1 ${isChecked ? 'text-green-400 line-through' : 'text-white group-hover:text-fire-yellow'}`}>
+                                                    {item.title}
+                                                </h3>
+                                                <p className="text-xs text-gray-400 font-light line-clamp-2 group-hover:text-gray-200 transition-colors">
+                                                    {item.description}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    )}
+                                </SortableTile>
+                            );
+                        })}
+
+                        {/* Add New Task Tile (for editable tabs) */}
+                        {isEditable && (
+                            <div
+                                onClick={handleAddNewClick}
+                                className="tile group relative h-48 rounded-2xl overflow-hidden cursor-pointer border-2 border-dashed border-white/20 hover:border-fire-orange/50 bg-white/5 hover:bg-white/10 transition-all flex items-center justify-center"
+                            >
+                                <div className="text-center">
+                                    <div className="w-16 h-16 rounded-full bg-fire-orange/20 flex items-center justify-center mx-auto mb-4 group-hover:bg-fire-orange/30 transition-colors">
+                                        <FontAwesomeIcon icon={faPlus} className="text-fire-orange text-2xl group-hover:scale-110 transition-transform" />
                                     </div>
+                                    <h3 className="header-font text-xl text-white/70 group-hover:text-fire-orange transition-colors">
+                                        Add New Task
+                                    </h3>
                                 </div>
-                            )}
-
-                            {/* Edit/Delete Buttons (for editable tabs) */}
-                            {isEditable && (
-                                <div className="absolute top-4 left-4 z-20 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <button
-                                        onClick={(e) => handleEditClick(e, item)}
-                                        className="bg-blue-600 hover:bg-blue-500 w-8 h-8 rounded-full flex items-center justify-center shadow-lg transition-colors"
-                                        title="Edit task"
-                                    >
-                                        <FontAwesomeIcon icon={faPen} className="text-white text-xs" />
-                                    </button>
-                                    <button
-                                        onClick={(e) => handleDeleteClick(e, item)}
-                                        className="bg-red-600 hover:bg-red-500 w-8 h-8 rounded-full flex items-center justify-center shadow-lg transition-colors"
-                                        title="Delete task"
-                                    >
-                                        <FontAwesomeIcon icon={faTrash} className="text-white text-xs" />
-                                    </button>
-                                </div>
-                            )}
-
-                            {/* Badges */}
-                            <div className="absolute top-4 right-4 z-10 flex gap-2">
-                                {hasVideo && <div className="bg-red-600 w-8 h-8 rounded-full flex items-center justify-center shadow-lg"><FontAwesomeIcon icon={faPlay} className="text-white text-xs" /></div>}
-                                {hasContext && <div className="bg-blue-600 w-8 h-8 rounded-full flex items-center justify-center shadow-lg"><FontAwesomeIcon icon={faList} className="text-white text-xs" /></div>}
                             </div>
-
-                            {/* Content */}
-                            <div className="absolute bottom-0 left-0 w-full p-6 z-10">
-                                <h3 className={`header-font text-2xl leading-none mb-1 ${isChecked ? 'text-green-400 line-through' : 'text-white group-hover:text-fire-yellow'}`}>
-                                    {item.title}
-                                </h3>
-                                <p className="text-xs text-gray-400 font-light line-clamp-2 group-hover:text-gray-200 transition-colors">
-                                    {item.description}
-                                </p>
-                            </div>
-                        </div>
-                    );
-                })}
-
-                {/* Add New Task Tile (for editable tabs) */}
-                {isEditable && (
-                    <div
-                        onClick={handleAddNewClick}
-                        className="tile group relative h-48 rounded-2xl overflow-hidden cursor-pointer border-2 border-dashed border-white/20 hover:border-fire-orange/50 bg-white/5 hover:bg-white/10 transition-all flex items-center justify-center"
-                    >
-                        <div className="text-center">
-                            <div className="w-16 h-16 rounded-full bg-fire-orange/20 flex items-center justify-center mx-auto mb-4 group-hover:bg-fire-orange/30 transition-colors">
-                                <FontAwesomeIcon icon={faPlus} className="text-fire-orange text-2xl group-hover:scale-110 transition-transform" />
-                            </div>
-                            <h3 className="header-font text-xl text-white/70 group-hover:text-fire-orange transition-colors">
-                                Add New Task
-                            </h3>
-                        </div>
+                        )}
                     </div>
-                )}
-            </div>
+                </SortableContext>
+            </DndContext>
 
             {/* Video/Context Modal */}
             <Modal isOpen={showModal} onClose={() => setShowModal(false)} title={selectedItem?.title}>
