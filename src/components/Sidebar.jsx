@@ -8,10 +8,12 @@ import {
     faTableCellsLarge, faPenNib, faChartLine, faSitemap, faBullseye,
     faRightFromBracket, faXmark, faQuoteRight, faFilm, faShieldHalved,
     faBan, faCircleCheck, faToolbox, faGraduationCap, faClockRotateLeft,
-    faChevronDown, faChevronRight, faSun, faLightbulb, faScroll, faRocket, faCalendarDays
+    faChevronDown, faChevronRight, faSun, faLightbulb, faScroll, faRocket,
+    faCalendarDays, faHome, faCog, faHeart
 } from '@fortawesome/free-solid-svg-icons';
 import { faYoutube } from '@fortawesome/free-brands-svg-icons';
 import { motion, AnimatePresence } from 'framer-motion';
+import SettingsModal from './SettingsModal';
 
 // Icon mapping
 const iconMap = {
@@ -19,7 +21,7 @@ const iconMap = {
     faTableCellsLarge, faPenNib, faChartLine, faSitemap, faBullseye,
     faQuoteRight, faFilm, faShieldHalved, faBan, faCircleCheck,
     faToolbox, faGraduationCap, faYoutube, faClockRotateLeft,
-    faSun, faLightbulb, faScroll, faRocket, faCalendarDays
+    faSun, faLightbulb, faScroll, faRocket, faCalendarDays, faHome, faHeart
 };
 
 // Grouped tab configuration
@@ -90,6 +92,7 @@ export default function Sidebar({ isOpen, onClose }) {
     const { logout } = useAuth();
     const { userData } = useData();
     const navigate = useNavigate();
+    const [showSettings, setShowSettings] = React.useState(false);
 
     async function handleLogout() {
         try {
@@ -109,7 +112,7 @@ export default function Sidebar({ isOpen, onClose }) {
         <>
             {/* Desktop Sidebar (Always visible md+) */}
             <aside className="fixed inset-y-0 left-0 w-64 bg-black/90 backdrop-blur-xl border-r border-white/10 hidden md:flex flex-col z-20">
-                <SidebarContent onLogout={handleLogout} level={userData?.level || 1} />
+                <SidebarContent onLogout={handleLogout} level={userData?.level || 1} showSettings={showSettings} setShowSettings={setShowSettings} />
             </aside>
 
             {/* Mobile Drawer */}
@@ -131,16 +134,19 @@ export default function Sidebar({ isOpen, onClose }) {
                             variants={drawerVariants}
                             transition={{ type: "tween", duration: 0.3 }}
                         >
-                            <SidebarContent onLogout={handleLogout} onClose={onClose} isMobile level={userData?.level || 1} />
+                            <SidebarContent onLogout={handleLogout} onClose={onClose} isMobile level={userData?.level || 1} showSettings={showSettings} setShowSettings={setShowSettings} />
                         </motion.aside>
                     </>
                 )}
             </AnimatePresence>
+
+            {/* Settings Modal */}
+            <SettingsModal isOpen={showSettings} onClose={() => setShowSettings(false)} />
         </>
     );
 }
 
-function SidebarContent({ onLogout, onClose, isMobile, level }) {
+function SidebarContent({ onLogout, onClose, isMobile, level, showSettings, setShowSettings }) {
     const location = useLocation();
     const currentPath = location.pathname.split('/').pop();
 
@@ -178,6 +184,22 @@ function SidebarContent({ onLogout, onClose, isMobile, level }) {
             </div>
 
             <nav className="flex-1 overflow-y-auto custom-scrollbar p-3 space-y-1">
+                {/* Overview - Always visible at top */}
+                <NavLink
+                    to="/dashboard/overview"
+                    onClick={isMobile ? onClose : undefined}
+                    className={({ isActive }) =>
+                        `w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-all mb-2 ${isActive
+                            ? 'bg-gradient-to-r from-fire-orange/20 to-fire-red/20 text-white shadow-[0_0_15px_rgba(255,94,0,0.3)] border border-fire-orange/30'
+                            : 'text-gray-400 hover:text-white hover:bg-white/5'
+                        }`
+                    }
+                >
+                    <FontAwesomeIcon icon={faHome} className="text-lg" />
+                    <span className="font-semibold">Overview</span>
+                </NavLink>
+
+                {/* Grouped Tabs */}
                 {sidebarGroups.map(group => {
                     const isExpanded = expandedGroups[group.id];
                     const hasActiveItem = group.items.some(item => item.id === currentPath);
@@ -244,6 +266,13 @@ function SidebarContent({ onLogout, onClose, isMobile, level }) {
             </nav>
 
             <div className="p-3 border-t border-white/5 bg-black/20">
+                <button
+                    onClick={() => setShowSettings(true)}
+                    className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-gray-400 hover:text-white hover:bg-white/5 transition-all text-sm mb-2"
+                >
+                    <FontAwesomeIcon icon={faCog} />
+                    <span className="font-medium">Settings</span>
+                </button>
                 <button
                     onClick={onLogout}
                     className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-gray-400 hover:text-white hover:bg-white/5 transition-all text-sm"

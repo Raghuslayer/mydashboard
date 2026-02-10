@@ -4,6 +4,7 @@ import PrivateRoute from './components/PrivateRoute';
 import Login from './pages/Login';
 import DashboardLayout from './layouts/DashboardLayout';
 import DashboardContent from './pages/DashboardContent';
+import Overview from './pages/Overview';
 import Matrix from './pages/Matrix';
 import Journal from './pages/Journal';
 import Analysis from './pages/Analysis';
@@ -13,6 +14,8 @@ import Tasks from './pages/Tasks';
 import DynamicQuote from './pages/DynamicQuote';
 import History from './pages/History';
 import SemesterGoals from './pages/SemesterGoals';
+import UserSetup from './pages/UserSetup';
+import LifeVisualizationPage from './pages/LifeVisualizationPage';
 
 function App() {
   return (
@@ -24,7 +27,9 @@ function App() {
           <DashboardLayout />
         </PrivateRoute>
       }>
-        <Route index element={<Navigate to="morning" replace />} />
+        <Route index element={<Navigate to="overview" replace />} />
+        <Route path="overview" element={<Overview />} />
+        <Route path="life-visualization" element={<LifeVisualizationPage />} />
         <Route path="matrix" element={<Matrix />} />
         <Route path="journal" element={<Journal />} />
         <Route path="analysis" element={<Analysis />} />

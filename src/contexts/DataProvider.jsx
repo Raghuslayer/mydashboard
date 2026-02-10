@@ -16,6 +16,25 @@ export function DataProvider({ children }) {
 
     // Global State
     const [userData, setUserData] = useState({ xp: 0, level: 1, goal: 'UNLEASH YOUR INNER FIRE' });
+    const [userProfile, setUserProfile] = useState({
+        dob: null,
+        theme: 'intense',
+        name: '',
+        collegeStartDate: null,
+        collegeEndDate: null
+    });
+    // Streak and engagement data
+    const [streakData, setStreakData] = useState({
+        currentStreak: 0,
+        longestStreak: 0,
+        lastActiveDate: null,
+        streakCalendar: {} // { 'YYYY-MM-DD': true }
+    });
+    // Achievements and milestones
+    const [achievements, setAchievements] = useState([]);
+    // Commitments and intentions (psychology features)
+    const [commitments, setCommitments] = useState([]);
+    const [intentions, setIntentions] = useState([]);
     const [checkedStates, setCheckedStates] = useState({});
     const [dailyTasks, setDailyTasks] = useState([]);
     const [journalEntries, setJournalEntries] = useState([]);
@@ -91,6 +110,10 @@ export function DataProvider({ children }) {
     const saveDailyAnalysis = async (uid, date, analysis) => {
         await setDoc(doc(db, `artifacts/${getAppId()}/users/${uid}/daily_content`, date), { analysis }, { merge: true });
     };
+
+    const saveUserProfile = useCallback(debounce(async (uid, profile) => {
+        await setDoc(doc(db, `artifacts/${getAppId()}/users/${uid}/user_data`, 'profile'), profile, { merge: true });
+    }, 1000), []);
 
     // ===== HELPER FUNCTION: Calculate Daily Stats =====
 
@@ -303,6 +326,14 @@ export function DataProvider({ children }) {
                     if (data.lesson) setDailyLesson(data.lesson);
                     if (data.quote) setDailyQuote(data.quote);
                     if (data.analysis) setDailyAnalysis(data.analysis);
+                }
+
+                // 11. User Profile (DOB, theme)
+                const profileSnap = await getDoc(doc(db, `artifacts/${appId}/users/${uid}/user_data`, 'profile'));
+                if (profileSnap.exists()) {
+                    setUserProfile(profileSnap.data());
+                } else {
+                    setUserProfile({ dob: null, theme: 'intense', name: '' });
                 }
 
             } catch (err) {
@@ -534,15 +565,27 @@ export function DataProvider({ children }) {
         });
     }
 
-    // Journal
+    // ===== ACTIONS =====
+
+    // Add journal entry (legacy - for simple text entries)
     function addJournalEntry(text) {
-        const newEntry = { text, ts: Date.now() };
-        setJournalEntries(prev => {
-            const newState = [newEntry, ...prev].slice(0, 50);
-            if (currentUser) saveJournal(currentUser.uid, newState);
-            return newState;
-        });
-        addXP(10);
+        if (!currentUser) return;
+        const newEntries = [...journalEntries, { text, ts: Date.now() }];
+        setJournalEntries(newEntries);
+        saveJournal(currentUser.uid, newEntries);
+    }
+
+    // Save journal entry (new format - handles check-in data and manual entries)
+    async function saveJournalEntry(entry) {
+        if (!currentUser) return;
+
+        // Replace or add today's entry
+        const todayKey = new Date().toISOString().split('T')[0];
+        const newEntries = journalEntries.filter(e => !e.date?.startsWith(todayKey));
+        newEntries.unshift(entry); // Add to beginning
+
+        setJournalEntries(newEntries);
+        await saveJournal(currentUser.uid, newEntries);
     }
 
     // Matrix Tasks
@@ -604,8 +647,18 @@ export function DataProvider({ children }) {
         });
     }
 
+    // Update user profile
+    function updateUserProfile(profileData) {
+        setUserProfile(prev => {
+            const newProfile = { ...prev, ...profileData };
+            if (currentUser) saveUserProfile(currentUser.uid, newProfile);
+            return newProfile;
+        });
+    }
+
     const value = {
         userData,
+        userProfile, // User profile with DOB and theme
         checkedStates,
         dailyTasks,
         journalEntries,
@@ -628,6 +681,7 @@ export function DataProvider({ children }) {
         clearCompletedDailyTasks,
         deleteDailyTask,
         addJournalEntry,
+        saveJournalEntry,
         addMatrixTask,
         toggleMatrixTask,
         deleteMatrixTask,
@@ -635,6 +689,7 @@ export function DataProvider({ children }) {
         addSemesterGoal,
         updateSemesterGoal,
         deleteSemesterGoal,
+        updateUserProfile, // Update user profile (DOB, theme, etc.)
         dailyLesson,
         dailyQuote,
         setDailyLesson: (lesson) => {

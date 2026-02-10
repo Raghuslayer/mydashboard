@@ -32,23 +32,29 @@ async function fetchWithRetry(url, options, retries = 3, delay = 1000) {
 }
 
 /**
- * Generic helper to call Gemini API via Backend Proxy
+ * Generic helper to call Gemini API directly (no proxy needed)
  */
 async function callGemini(prompt, systemInstruction = "") {
-    // Note: We no longer need the API Key here! It's safe on the server.
-    const url = `/api/gemini`;
+    if (!API_KEY) {
+        throw new Error("VITE_GEMINI_API_KEY not configured in .env.local");
+    }
+
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${API_KEY}`;
 
     // Construct body
-    const body = {
-        prompt,
-        systemInstruction
+    const bodyValue = {
+        contents: [{ parts: [{ text: prompt }] }]
     };
+
+    if (systemInstruction) {
+        bodyValue.system_instruction = { parts: [{ text: systemInstruction }] };
+    }
 
     try {
         const response = await fetchWithRetry(url, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(body)
+            body: JSON.stringify(bodyValue)
         });
 
         const data = await response.json();
@@ -60,11 +66,6 @@ async function callGemini(prompt, systemInstruction = "") {
         }
     } catch (error) {
         console.error("Gemini API Error:", error);
-
-        // Mock fallback for localhost if not running via 'vercel dev'
-        if (error.message.includes("404") || error.message.includes("Unexpected token")) {
-            return "**[Dev Mode]** API endpoint not found. Make sure to run 'vercel dev' to enable the backend functions.";
-        }
         throw error;
     }
 }

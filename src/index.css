@@ -6,11 +6,58 @@
   --font-accent: 'Bebas Neue', sans-serif;
   --font-body: 'Inter', sans-serif;
 
-  /* Colors */
+  /* Default theme colors (Intense) */
   --color-fire-red: #ff2a00;
   --color-fire-orange: #ff5e00;
   --color-fire-yellow: #ff9d00;
   --color-glass-bg: rgba(18, 18, 18, 0.65);
+  
+  /* Theme-specific colors will be set via data-theme attribute */
+  --color-primary: var(--color-fire-orange);
+  --color-secondary: var(--color-fire-red);
+  --color-accent: var(--color-fire-yellow);
+  --color-glow: rgba(255, 94, 0, 0.3);
+  --color-border: rgba(255, 94, 0, 0.3);
+}
+
+/* Theme Variants */
+:root[data-theme="intense"] {
+  --color-primary: #ff5e00;
+  --color-secondary: #ff2a00;
+  --color-accent: #ff9d00;
+  --color-glow: rgba(255, 94, 0, 0.3);
+  --color-border: rgba(255, 94, 0, 0.3);
+  --gradient-from: #ff9d00;
+  --gradient-via: #ff5e00;
+  --gradient-to: #ff2a00;
+}
+
+:root[data-theme="cool"] {
+  --color-primary: #00d4ff;
+  --color-secondary: #0099ff;
+  --color-accent: #00ffff;
+  --color-glow: rgba(0, 212, 255, 0.3);
+  --color-border: rgba(0, 153, 255, 0.3);
+  --color-fire-red: #0099ff;
+  --color-fire-orange: #00d4ff;
+  --color-fire-yellow: #00ffff;
+  --gradient-from: #00ffff;
+  --gradient-via: #00d4ff;
+  --gradient-to: #0099ff;
+}
+
+:root[data-theme="spiritual"] {
+  --color-primary: #b794f6;
+  --color-secondary: #9333ea;
+  --color-accent: #fbbf24;
+  --color-glow: rgba(183, 148, 246, 0.3);
+  --color-border: rgba(147, 51, 234, 0.3);
+  --color-fire-red: #9333ea;
+  --color-fire-orange: #b794f6;
+  --color-fire-yellow: #fbbf24;
+  --gradient-from: #fbbf24;
+  --gradient-via: #b794f6;
+  --gradient-to: #9333ea;
 }
 
 @layer base {
