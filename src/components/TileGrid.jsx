@@ -242,20 +242,21 @@ export default function TileGrid({ items, tabId, isRoutine, checkedStates, onTil
                             );
                         })}
 
-                        {/* Add New Task Tile (for editable tabs) */}
+                        {/* Add New Task Tile with 3D effect */}
                         {isEditable && (
                             <div
                                 onClick={handleAddNewClick}
-                                className="tile group relative h-48 rounded-2xl overflow-hidden cursor-pointer border-2 border-dashed border-white/20 hover:border-fire-orange/50 bg-white/5 hover:bg-white/10 transition-all flex items-center justify-center"
+                                className="tile group relative h-48 overflow-hidden cursor-pointer border-2 border-dashed border-[var(--color-border)] bg-[var(--color-glass-bg)] transition-all flex items-center justify-center btn-3d"
                             >
-                                <div className="text-center">
-                                    <div className="w-16 h-16 rounded-full bg-fire-orange/20 flex items-center justify-center mx-auto mb-4 group-hover:bg-fire-orange/30 transition-colors">
-                                        <FontAwesomeIcon icon={faPlus} className="text-fire-orange text-2xl group-hover:scale-110 transition-transform" />
+                                <div className="text-center relative z-10">
+                                    <div className="w-16 h-16 rounded-full bg-[var(--color-primary)]/20 flex items-center justify-center mx-auto mb-4 group-hover:bg-[var(--color-primary)]/30 transition-colors animate-glow">
+                                        <FontAwesomeIcon icon={faPlus} className="text-[var(--color-primary)] text-2xl group-hover:scale-110 transition-transform drop-shadow-lg" />
                                     </div>
-                                    <h3 className="header-font text-xl text-white/70 group-hover:text-fire-orange transition-colors">
+                                    <h3 className="header-font text-xl text-white/70 group-hover:fire-text transition-colors">
                                         Add New Task
                                     </h3>
                                 </div>
+                                <div className="absolute inset-0 holographic opacity-10 group-hover:opacity-30 transition-opacity"></div>
                             </div>
                         )}
                     </div>

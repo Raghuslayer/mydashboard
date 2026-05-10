@@ -9,7 +9,7 @@ import {
     faRightFromBracket, faXmark, faQuoteRight, faFilm, faShieldHalved,
     faBan, faCircleCheck, faToolbox, faGraduationCap, faClockRotateLeft,
     faChevronDown, faChevronRight, faSun, faLightbulb, faScroll, faRocket,
-    faCalendarDays, faHome, faCog, faHeart
+    faCalendarDays, faHome, faCog, faHeart, faCrosshairs, faFire
 } from '@fortawesome/free-solid-svg-icons';
 import { faYoutube } from '@fortawesome/free-brands-svg-icons';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -21,7 +21,8 @@ const iconMap = {
     faTableCellsLarge, faPenNib, faChartLine, faSitemap, faBullseye,
     faQuoteRight, faFilm, faShieldHalved, faBan, faCircleCheck,
     faToolbox, faGraduationCap, faYoutube, faClockRotateLeft,
-    faSun, faLightbulb, faScroll, faRocket, faCalendarDays, faHome, faHeart
+    faSun, faLightbulb, faScroll, faRocket, faCalendarDays, faHome, faHeart,
+    faCrosshairs, faFire
 };
 
 // Grouped tab configuration
@@ -51,6 +52,8 @@ const sidebarGroups = [
         label: 'Inspiration',
         icon: faLightbulb,
         items: [
+            { id: 'achievementJar', label: 'Achievement Jar', icon: 'faHeart' },
+            { id: 'challenges', label: 'Challenges', icon: 'faCrosshairs' },
             { id: 'quote', label: 'Daily Wisdom', icon: 'faQuoteRight' },
             { id: 'vault', label: 'Motivation Vault', icon: 'faFilm' },
         ]
@@ -82,6 +85,7 @@ const sidebarGroups = [
         items: [
             { id: 'semesterGoals', label: 'Semester Goals', icon: 'faGraduationCap' },
             { id: 'goal', label: 'Main Goal', icon: 'faBullseye' },
+            { id: 'analytics', label: 'Analytics', icon: 'faChartLine' },
             { id: 'analysis', label: 'Analysis', icon: 'faChartLine' },
             { id: 'history', label: 'History', icon: 'faClockRotateLeft' },
         ]

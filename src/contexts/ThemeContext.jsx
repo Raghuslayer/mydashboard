@@ -6,48 +6,48 @@ export function useTheme() {
     return useContext(ThemeContext);
 }
 
-// Theme configurations
+// Theme configurations - MASCULINE & POWERFUL
 export const themes = {
     intense: {
         name: 'Intense',
-        description: 'Fire and passion',
+        description: 'Battle red - For warriors',
         colors: {
-            primary: '#ff5e00',
-            secondary: '#ff2a00',
-            accent: '#ff9d00',
-            bgGradientFrom: 'from-gray-900',
-            bgGradientTo: 'to-black',
-            textGradient: 'from-fire-yellow via-fire-orange to-fire-red',
-            glowColor: 'rgba(255, 94, 0, 0.3)',
-            borderColor: 'rgba(255, 94, 0, 0.3)',
+            primary: '#dc2626',
+            secondary: '#991b1b',
+            accent: '#f59e0b',
+            bgGradientFrom: 'from-[#0a0e17]',
+            bgGradientTo: 'to-[#111827]',
+            textGradient: 'from-[#dc2626] via-[#991b1b] to-[#7f1d1d]',
+            glowColor: 'rgba(220, 38, 38, 0.4)',
+            borderColor: 'rgba(220, 38, 38, 0.2)',
         }
     },
     cool: {
         name: 'Cool',
-        description: 'Calm and focused',
+        description: 'Steel blue - Tactical precision',
         colors: {
-            primary: '#00d4ff',
-            secondary: '#0099ff',
-            accent: '#00ffff',
-            bgGradientFrom: 'from-slate-900',
-            bgGradientTo: 'to-blue-950',
-            textGradient: 'from-cyan-300 via-blue-400 to-blue-500',
-            glowColor: 'rgba(0, 212, 255, 0.3)',
-            borderColor: 'rgba(0, 153, 255, 0.3)',
+            primary: '#00d9ff',
+            secondary: '#1e3a5f',
+            accent: '#10b981',
+            bgGradientFrom: 'from-[#0a0e17]',
+            bgGradientTo: 'to-[#111827]',
+            textGradient: 'from-[#00d9ff] via-[#1e3a5f] to-[#0f172a]',
+            glowColor: 'rgba(0, 217, 255, 0.4)',
+            borderColor: 'rgba(0, 217, 255, 0.2)',
         }
     },
     spiritual: {
         name: 'Spiritual',
-        description: 'Peaceful and enlightened',
+        description: 'Deep purple - Inner strength',
         colors: {
-            primary: '#b794f6',
-            secondary: '#9333ea',
-            accent: '#fbbf24',
-            bgGradientFrom: 'from-purple-950',
-            bgGradientTo: 'to-indigo-950',
-            textGradient: 'from-purple-300 via-purple-400 to-purple-500',
-            glowColor: 'rgba(183, 148, 246, 0.3)',
-            borderColor: 'rgba(147, 51, 234, 0.3)',
+            primary: '#8b5cf6',
+            secondary: '#4c1d95',
+            accent: '#f59e0b',
+            bgGradientFrom: 'from-[#0a0e17]',
+            bgGradientTo: 'to-[#111827]',
+            textGradient: 'from-[#8b5cf6] via-[#4c1d95] to-[#1e1b4b]',
+            glowColor: 'rgba(139, 92, 246, 0.4)',
+            borderColor: 'rgba(139, 92, 246, 0.2)',
         }
     }
 };
