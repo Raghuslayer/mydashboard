@@ -32,6 +32,10 @@ export function DataProvider({ children }) {
     });
     // Achievements and milestones
     const [achievements, setAchievements] = useState([]);
+    // Achievement Jar (Cookie Jar - David Goggins style)
+    const [achievementJar, setAchievementJar] = useState([]);
+    // Challenges (Weekly/Monthly goals with XP rewards)
+    const [challenges, setChallenges] = useState([]);
     // Commitments and intentions (psychology features)
     const [commitments, setCommitments] = useState([]);
     const [intentions, setIntentions] = useState([]);
@@ -110,6 +114,14 @@ export function DataProvider({ children }) {
     const saveDailyAnalysis = async (uid, date, analysis) => {
         await setDoc(doc(db, `artifacts/${getAppId()}/users/${uid}/daily_content`, date), { analysis }, { merge: true });
     };
+
+    const saveAchievementJar = useCallback(debounce(async (uid, jar) => {
+        await setDoc(doc(db, `artifacts/${getAppId()}/users/${uid}/user_data`, 'achievement_jar'), { achievements: jar }, { merge: true });
+    }, 1000), []);
+
+    const saveChallenges = useCallback(debounce(async (uid, challengesList) => {
+        await setDoc(doc(db, `artifacts/${getAppId()}/users/${uid}/user_data`, 'challenges'), { challenges: challengesList }, { merge: true });
+    }, 1000), []);
 
     const saveUserProfile = useCallback(debounce(async (uid, profile) => {
         await setDoc(doc(db, `artifacts/${getAppId()}/users/${uid}/user_data`, 'profile'), profile, { merge: true });
@@ -334,6 +346,14 @@ export function DataProvider({ children }) {
                     setUserProfile(profileSnap.data());
                 } else {
                     setUserProfile({ dob: null, theme: 'intense', name: '' });
+                }
+
+                // 12. Achievement Jar
+                const achievementJarSnap = await getDoc(doc(db, `artifacts/${appId}/users/${uid}/user_data`, 'achievement_jar'));
+                if (achievementJarSnap.exists()) {
+                    setAchievementJar(achievementJarSnap.data().achievements || []);
+                } else {
+                    setAchievementJar([]);
                 }
 
             } catch (err) {
@@ -656,6 +676,69 @@ export function DataProvider({ children }) {
         });
     }
 
+    // Achievement Jar CRUD
+    function addAchievement(achievementData) {
+        const newAchievement = {
+            id: crypto.randomUUID(),
+            ...achievementData,
+            date: achievementData.date || Date.now(),
+        };
+        setAchievementJar(prev => {
+            const newState = [newAchievement, ...prev];
+            if (currentUser) saveAchievementJar(currentUser.uid, newState);
+            return newState;
+        });
+    }
+
+    function updateAchievement(id, updatedData) {
+        setAchievementJar(prev => {
+            const newState = prev.map(a => a.id === id ? { ...a, ...updatedData } : a);
+            if (currentUser) saveAchievementJar(currentUser.uid, newState);
+            return newState;
+        });
+    }
+
+    function deleteAchievement(id) {
+        setAchievementJar(prev => {
+            const newState = prev.filter(a => a.id !== id);
+            if (currentUser) saveAchievementJar(currentUser.uid, newState);
+            return newState;
+        });
+    }
+
+    // Challenges CRUD
+    function addChallenge(challengeData) {
+        const newChallenge = {
+            id: crypto.randomUUID(),
+            ...challengeData,
+            completed: false,
+            progress: 0,
+            createdAt: Date.now(),
+            completedAt: null
+        };
+        setChallenges(prev => {
+            const newState = [newChallenge, ...prev];
+            if (currentUser) saveChallenges(currentUser.uid, newState);
+            return newState;
+        });
+    }
+
+    function updateChallenge(id, updatedData) {
+        setChallenges(prev => {
+            const newState = prev.map(c => c.id === id ? { ...c, ...updatedData } : c);
+            if (currentUser) saveChallenges(currentUser.uid, newState);
+            return newState;
+        });
+    }
+
+    function deleteChallenge(id) {
+        setChallenges(prev => {
+            const newState = prev.filter(c => c.id !== id);
+            if (currentUser) saveChallenges(currentUser.uid, newState);
+            return newState;
+        });
+    }
+
     const value = {
         userData,
         userProfile, // User profile with DOB and theme
@@ -667,6 +750,8 @@ export function DataProvider({ children }) {
         dailyTaskHistory, // Separate history for user-created daily tasks
         semesterGoals,
         customRoutineTasks, // Custom routine tasks state
+        achievementJar, // Achievement Jar (Cookie Jar)
+        challenges, // Challenges state
         loadingData,
         addXP,
         toggleRoutineTask,
@@ -690,6 +775,12 @@ export function DataProvider({ children }) {
         updateSemesterGoal,
         deleteSemesterGoal,
         updateUserProfile, // Update user profile (DOB, theme, etc.)
+        addAchievement,    // Add achievement to jar
+        updateAchievement, // Update achievement
+        deleteAchievement, // Delete achievement
+        addChallenge,      // Add challenge
+        updateChallenge,   // Update challenge
+        deleteChallenge,   // Delete challenge
         dailyLesson,
         dailyQuote,
         setDailyLesson: (lesson) => {

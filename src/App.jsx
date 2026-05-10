@@ -1,5 +1,6 @@
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
+import ErrorBoundary from './components/ErrorBoundary';
 import PrivateRoute from './components/PrivateRoute';
 import Login from './pages/Login';
 import DashboardLayout from './layouts/DashboardLayout';
@@ -16,13 +17,17 @@ import History from './pages/History';
 import SemesterGoals from './pages/SemesterGoals';
 import UserSetup from './pages/UserSetup';
 import LifeVisualizationPage from './pages/LifeVisualizationPage';
+import AchievementJar from './pages/AchievementJar';
+import Challenges from './pages/Challenges';
+import Analytics from './pages/Analytics';
 
 function App() {
   return (
-    <Routes>
-      <Route path="/login" element={<Login />} />
+    <ErrorBoundary>
+      <Routes>
+        <Route path="/login" element={<Login />} />
 
-      <Route path="/dashboard" element={
+      <Route path="dashboard" element={
         <PrivateRoute>
           <DashboardLayout />
         </PrivateRoute>
@@ -30,6 +35,9 @@ function App() {
         <Route index element={<Navigate to="overview" replace />} />
         <Route path="overview" element={<Overview />} />
         <Route path="life-visualization" element={<LifeVisualizationPage />} />
+        <Route path="achievementJar" element={<AchievementJar />} />
+        <Route path="challenges" element={<Challenges />} />
+        <Route path="analytics" element={<Analytics />} />
         <Route path="matrix" element={<Matrix />} />
         <Route path="journal" element={<Journal />} />
         <Route path="analysis" element={<Analysis />} />
@@ -46,6 +54,7 @@ function App() {
       <Route path="/" element={<Navigate to="/dashboard" replace />} />
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>
+    </ErrorBoundary>
   );
 }
 
