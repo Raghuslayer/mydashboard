@@ -174,12 +174,15 @@ export default function SettingsModal({ isOpen, onClose }) {
                                     initial={{ opacity: 0, x: -20 }}
                                     animate={{ opacity: 1, x: 0 }}
                                     transition={{ delay: 0.5 }}
+                                    className="pb-2"
                                 >
                                     <label className="flex items-center gap-2 text-sm font-bold text-gray-300 mb-3 uppercase tracking-wider">
                                         <FontAwesomeIcon icon={faPalette} className="text-[var(--color-primary)]" />
                                         Theme
                                     </label>
-                                    <ThemeSwitcher />
+                                    <div className="mb-4">
+                                        <ThemeSwitcher />
+                                    </div>
                                 </motion.div>
 
                                 {/* Error Message */}

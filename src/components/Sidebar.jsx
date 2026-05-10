@@ -176,9 +176,9 @@ function SidebarContent({ onLogout, onClose, isMobile, level, showSettings, setS
             <div className="p-5 border-b border-white/5 flex justify-between items-center">
                 <div>
                     <h1 className="header-font text-2xl md:text-3xl text-transparent bg-clip-text bg-gradient-to-r from-fire-yellow to-fire-red leading-tight">
-                        HABIT<br />DASHBOARD
+                        IRON<br />DISCIPLINE
                     </h1>
-                    <p className="text-[10px] text-gray-500 uppercase tracking-widest mt-1">Level {level} • v2.0</p>
+                    <p className="text-[10px] text-gray-500 uppercase tracking-widest mt-1">Level {level} • Warrior Mode</p>
                 </div>
                 {isMobile && (
                     <button onClick={onClose} className="text-gray-400 hover:text-white">
