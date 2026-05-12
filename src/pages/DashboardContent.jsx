@@ -1,11 +1,14 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { useData } from '../contexts/DataProvider';
 import TileGrid from '../components/TileGrid';
+import LoadingScreen from '../components/LoadingScreen';
 import { staticData, routineTabs } from '../data/staticData';
 
 export default function DashboardContent() {
     const { tabId } = useParams();
+    const [localLoading, setLocalLoading] = useState(true);
+    
     const {
         checkedStates,
         toggleRoutineTask,
@@ -17,10 +20,23 @@ export default function DashboardContent() {
         editableRoutineTabs
     } = useData();
 
+    // Trigger local loading when tab changes
+    useEffect(() => {
+        setLocalLoading(true);
+        const timer = setTimeout(() => {
+            setLocalLoading(false);
+        }, 1200); // 1.2s to read the quote
+        return () => clearTimeout(timer);
+    }, [tabId]);
+
     // Get items from custom routine tasks for editable tabs, static data for others
     const items = getRoutineTasks ? getRoutineTasks(tabId) : staticData[tabId] || [];
     const isRoutine = routineTabs.includes(tabId);
     const isEditable = editableRoutineTabs?.includes(tabId);
+
+    if (localLoading) {
+        return <LoadingScreen fullPage={false} />;
+    }
 
     // Get checked states for this tab
     const rawStates = checkedStates[tabId];

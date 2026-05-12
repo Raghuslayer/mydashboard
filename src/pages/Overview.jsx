@@ -8,8 +8,18 @@ import { faListCheck, faTableCellsLarge, faPenNib, faBullseye, faFire, faRocket 
 import { calculateDaysSinceBirth, calculateProgressPercentage } from '../utils/lifeCalculations';
 import { routineTabs, staticData } from '../data/staticData';
 
+import LoadingScreen from '../components/LoadingScreen';
+
 export default function Overview() {
     const { userData, userProfile, checkedStates, dailyTasks, customRoutineTasks } = useData();
+    const [localLoading, setLocalLoading] = React.useState(true);
+
+    React.useEffect(() => {
+        const timer = setTimeout(() => {
+            setLocalLoading(false);
+        }, 1200);
+        return () => clearTimeout(timer);
+    }, []);
 
     // Calculate today's progress
     const todayProgress = React.useMemo(() => {
@@ -37,6 +47,14 @@ export default function Overview() {
 
         return { completed, total, percentage: calculateProgressPercentage(completed, total) };
     }, [checkedStates, dailyTasks, customRoutineTasks]);
+
+    if (localLoading) {
+        return (
+            <div className="p-8">
+                <LoadingScreen fullPage={false} />
+            </div>
+        );
+    }
 
     const xpProgress = (userData.xp % 100);
 

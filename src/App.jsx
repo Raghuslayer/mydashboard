@@ -1,5 +1,7 @@
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
+import { useData } from './contexts/DataProvider';
+import LoadingScreen from './components/LoadingScreen';
 import ErrorBoundary from './components/ErrorBoundary';
 import PrivateRoute from './components/PrivateRoute';
 import Login from './pages/Login';
@@ -22,6 +24,25 @@ import Challenges from './pages/Challenges';
 import Analytics from './pages/Analytics';
 
 function App() {
+  const { loadingData } = useData();
+  const [showLoading, setShowLoading] = React.useState(true);
+
+  // Ensure loading screen shows for at least 1.5s so user can read the motivation
+  React.useEffect(() => {
+    if (!loadingData) {
+      const timer = setTimeout(() => {
+        setShowLoading(false);
+      }, 1500);
+      return () => clearTimeout(timer);
+    } else {
+      setShowLoading(true);
+    }
+  }, [loadingData]);
+
+  if (showLoading) {
+    return <LoadingScreen />;
+  }
+
   return (
     <ErrorBoundary>
       <Routes>

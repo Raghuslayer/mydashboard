@@ -53,10 +53,28 @@ const quadrants = [
     },
 ];
 
+import LoadingScreen from '../components/LoadingScreen';
+
 export default function Matrix() {
     const { matrixTasks, addMatrixTask, toggleMatrixTask, deleteMatrixTask } = useData();
     const [inputs, setInputs] = useState({ q1: '', q2: '', q3: '', q4: '' });
     const [focusedQ, setFocusedQ] = useState(null);
+    const [localLoading, setLocalLoading] = useState(true);
+
+    React.useEffect(() => {
+        const timer = setTimeout(() => {
+            setLocalLoading(false);
+        }, 1200);
+        return () => clearTimeout(timer);
+    }, []);
+
+    if (localLoading) {
+        return (
+            <div className="p-8">
+                <LoadingScreen fullPage={false} />
+            </div>
+        );
+    }
 
     const handleAdd = (quadrant) => {
         if (inputs[quadrant].trim()) {

@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { auth } from "../services/firebase";
+import LoadingScreen from "../components/LoadingScreen";
 import {
     onAuthStateChanged,
     signInWithEmailAndPassword,
@@ -47,7 +48,7 @@ export function AuthProvider({ children }) {
 
     return (
         <AuthContext.Provider value={value}>
-            {!loading && children}
+            {loading ? <LoadingScreen /> : children}
         </AuthContext.Provider>
     );
 }

@@ -8,6 +8,7 @@ import {
     faEdit, faTrash, faCheck
 } from '@fortawesome/free-solid-svg-icons';
 import Modal from '../components/Modal';
+import LoadingScreen from '../components/LoadingScreen';
 
 // Achievement icons pool
 const achievementIcons = [faTrophy, faStar, faMedal, faCrown, faFire, faRocket, faHeart, faBolt, faGem];
@@ -62,7 +63,20 @@ const MIN_SPEED  = 0.10;
 const globalPhysics = new Map();
 
 export default function AchievementJar() {
-    const { achievementJar, addAchievement, updateAchievement, deleteAchievement } = useData();
+    const { achievementJar, loadingData, addXP, addAchievement, updateAchievement, deleteAchievement } = useData();
+    const [localLoading, setLocalLoading] = useState(true);
+
+    useEffect(() => {
+        // Show loading for at least 1.2s to display motivational quote
+        const timer = setTimeout(() => {
+            setLocalLoading(false);
+        }, 1200);
+        return () => clearTimeout(timer);
+    }, []);
+
+    const containerRef = useRef(null);
+    const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
+
     const [showAddModal, setShowAddModal] = useState(false);
     const [showDetailModal, setShowDetailModal] = useState(false);
     const [selectedAchievement, setSelectedAchievement] = useState(null);
@@ -113,6 +127,14 @@ export default function AchievementJar() {
         setShowAddModal(true);
         setShowDetailModal(false);
     };
+
+    if (localLoading) {
+        return (
+            <div className="p-8 md:p-12 lg:p-16">
+                <LoadingScreen fullPage={false} />
+            </div>
+        );
+    }
 
     return (
         <div className="space-y-6 animate-in">

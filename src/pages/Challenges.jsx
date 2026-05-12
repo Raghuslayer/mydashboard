@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useData } from '../contexts/DataProvider';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -15,10 +15,21 @@ const difficultyColors = {
     extreme: { grad: 'from-purple-500 to-purple-900', glow: 'rgba(168,85,247,0.5)', label: 'EXTREME', xp: 500 },
 };
 
+import LoadingScreen from '../components/LoadingScreen';
+
 function todayStr() { return new Date().toISOString().split('T')[0]; }
 
 export default function Challenges() {
     const { challenges: saved, addChallenge, updateChallenge, deleteChallenge, checkInChallenge } = useData();
+    const [localLoading, setLocalLoading] = useState(true);
+
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setLocalLoading(false);
+        }, 1200);
+        return () => clearTimeout(timer);
+    }, []);
+
     const challenges = saved || [];
     const [showAdd, setShowAdd] = useState(false);
     const [editing, setEditing] = useState(null);
@@ -63,6 +74,14 @@ export default function Challenges() {
 
     // Get live challenge data for detail modal
     const liveDetail = detail ? challenges.find(c => c.id === detail.id) || detail : null;
+
+    if (localLoading) {
+        return (
+            <div className="p-8">
+                <LoadingScreen fullPage={false} />
+            </div>
+        );
+    }
 
     return (
         <div className="space-y-6 animate-in">

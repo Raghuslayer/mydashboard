@@ -20,14 +20,23 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 
+import { motion } from 'framer-motion';
+
 // ── Sortable wrapper ───────────────────────────────────────────────────────────
 function SortableTile({ item, index, children, isDraggable }) {
     const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
         useSortable({ id: item.id, disabled: !isDraggable });
 
     return (
-        <div
+        <motion.div
             ref={setNodeRef}
+            initial={{ opacity: 0, y: 30, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{
+                duration: 0.5,
+                delay: index * 0.08,
+                ease: [0.22, 1, 0.36, 1], // Power4.easeOut
+            }}
             style={{
                 transform: CSS.Transform.toString(transform),
                 transition,
@@ -36,7 +45,7 @@ function SortableTile({ item, index, children, isDraggable }) {
             }}
         >
             {children({ dragHandleProps: isDraggable ? { ...attributes, ...listeners } : null })}
-        </div>
+        </motion.div>
     );
 }
 
@@ -274,7 +283,14 @@ export default function TileGrid({
 
                         {/* ── Add New Task tile ── */}
                         {isEditable && (
-                            <div
+                            <motion.div
+                                initial={{ opacity: 0, y: 30, scale: 0.95 }}
+                                animate={{ opacity: 1, y: 0, scale: 1 }}
+                                transition={{
+                                    duration: 0.5,
+                                    delay: items.length * 0.08,
+                                    ease: [0.22, 1, 0.36, 1],
+                                }}
                                 className="group"
                                 onClick={handleAddNewClick}
                                 style={{
@@ -322,7 +338,7 @@ export default function TileGrid({
                                         click to create
                                     </div>
                                 </div>
-                            </div>
+                            </motion.div>
                         )}
                     </div>
                 </SortableContext>
