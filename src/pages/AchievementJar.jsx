@@ -671,7 +671,7 @@ function FloatingBadge({ achievement, index, dimRef, onClick }) {
 
             {/* Tooltip */}
             <motion.div
-                style={{ position:'absolute', left:'50%', top:'108%', translateX:'-50%', rotate: counterRotate, pointerEvents:'none', originX:'50%', originY:0, whiteSpace:'nowrap' }}
+                style={{ position:'absolute', left:'50%', top:'108%', translateX:'-50%', pointerEvents:'none', originX:'50%', originY:0, whiteSpace:'nowrap' }}
                 animate={{ opacity: hovered ? 1 : 0, y: hovered ? 0 : 4 }}
                 transition={{ duration: 0.14 }}
             >
