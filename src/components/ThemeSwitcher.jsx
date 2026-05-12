@@ -6,88 +6,35 @@ import { faPalette, faCheck } from '@fortawesome/free-solid-svg-icons';
 
 export default function ThemeSwitcher({ compact = false }) {
     const { currentTheme, changeTheme, availableThemes } = useTheme();
-    const [isOpen, setIsOpen] = React.useState(false);
 
-    if (compact) {
-        return (
-            <div className="flex gap-2">
-                {availableThemes.map(themeName => (
+    // Always use compact grid layout for better UX
+    return (
+        <div className="grid grid-cols-3 gap-2">
+            {availableThemes.map(themeName => {
+                const theme = themes[themeName];
+                const isActive = currentTheme === themeName;
+                
+                return (
                     <button
                         key={themeName}
                         onClick={() => changeTheme(themeName)}
-                        className={`p-2 rounded-lg border transition-all ${currentTheme === themeName
-                                ? 'border-fire-orange bg-fire-orange/20'
-                                : 'border-white/10 bg-white/5 hover:bg-white/10'
-                            }`}
-                        title={themes[themeName].name}
+                        className={`p-3 border transition-all relative overflow-hidden ${
+                            isActive
+                                ? 'border-[var(--color-primary)] bg-[var(--color-primary)]/20 shadow-[0_0_15px_var(--color-glow)]'
+                                : 'border-white/10 bg-white/5 hover:bg-white/10 hover:border-white/20'
+                        }`}
+                        title={theme.name}
                     >
-                        <ThemeIcon themeName={themeName} active={currentTheme === themeName} />
+                        <ThemeIcon themeName={themeName} active={isActive} />
+                        <p className="text-xs font-bold mt-2 uppercase tracking-wider">{theme.name}</p>
+                        {isActive && (
+                            <div className="absolute top-1 right-1">
+                                <FontAwesomeIcon icon={faCheck} className="text-[var(--color-primary)] text-xs" />
+                            </div>
+                        )}
                     </button>
-                ))}
-            </div>
-        );
-    }
-
-    return (
-        <div className="relative">
-            <button
-                onClick={() => setIsOpen(!isOpen)}
-                className="flex items-center gap-3 px-4 py-3 glass-panel hover:bg-white/5 transition-all rounded-xl w-full"
-            >
-                <FontAwesomeIcon icon={faPalette} className="text-fire-orange" />
-                <div className="flex-1 text-left">
-                    <p className="text-sm font-medium">Theme</p>
-                    <p className="text-xs text-gray-400">{themes[currentTheme].name}</p>
-                </div>
-                <motion.div
-                    animate={{ rotate: isOpen ? 180 : 0 }}
-                    transition={{ duration: 0.2 }}
-                >
-                    <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                    </svg>
-                </motion.div>
-            </button>
-
-            <AnimatePresence>
-                {isOpen && (
-                    <motion.div
-                        initial={{ opacity: 0, y: -10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -10 }}
-                        transition={{ duration: 0.2 }}
-                        className="absolute top-full left-0 right-0 mt-2 glass-panel p-2 rounded-xl z-50"
-                    >
-                        {availableThemes.map(themeName => {
-                            const theme = themes[themeName];
-                            const isActive = currentTheme === themeName;
-
-                            return (
-                                <button
-                                    key={themeName}
-                                    onClick={() => {
-                                        changeTheme(themeName);
-                                        setIsOpen(false);
-                                    }}
-                                    className={`w-full flex items-center gap-3 p-3 rounded-lg transition-all ${isActive
-                                            ? 'bg-white/10'
-                                            : 'hover:bg-white/5'
-                                        }`}
-                                >
-                                    <ThemeIcon themeName={themeName} active={isActive} />
-                                    <div className="flex-1 text-left">
-                                        <p className="text-sm font-medium">{theme.name}</p>
-                                        <p className="text-xs text-gray-400">{theme.description}</p>
-                                    </div>
-                                    {isActive && (
-                                        <FontAwesomeIcon icon={faCheck} className="text-fire-orange" />
-                                    )}
-                                </button>
-                            );
-                        })}
-                    </motion.div>
-                )}
-            </AnimatePresence>
+                );
+            })}
         </div>
     );
 }
@@ -100,7 +47,7 @@ function ThemeIcon({ themeName, active }) {
     };
 
     return (
-        <div className={`w-8 h-8 rounded-lg ${iconStyles[themeName]} ${active ? 'ring-2 ring-white/50' : ''}`}>
+        <div className={`w-full aspect-square ${iconStyles[themeName]} ${active ? 'ring-2 ring-[var(--color-primary)]' : ''}`}>
         </div>
     );
 }

@@ -1,5 +1,5 @@
-import React, { useState, useMemo } from 'react';
-import { motion } from 'framer-motion';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
+import { motion, useMotionValue, useAnimationFrame, useTransform } from 'framer-motion';
 import { useData } from '../contexts/DataProvider';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
@@ -14,15 +14,62 @@ const achievementIcons = [faTrophy, faStar, faMedal, faCrown, faFire, faRocket, 
 
 // Achievement colors pool - MASCULINE & POWERFUL
 const achievementColors = [
-    'from-red-600 to-red-800',        // Battle Red
-    'from-blue-600 to-blue-900',      // Steel Blue
-    'from-emerald-600 to-emerald-800',// Victory Green
-    'from-amber-600 to-amber-800',    // Gold Medal
-    'from-purple-600 to-purple-900',  // Royal Purple
-    'from-cyan-500 to-cyan-700',      // Electric Cyan
-    'from-orange-600 to-orange-800',  // Fire Orange
-    'from-slate-600 to-slate-800',    // Iron Gray
+    'from-red-600 to-red-800',
+    'from-blue-600 to-blue-900',
+    'from-emerald-600 to-emerald-800',
+    'from-amber-500 to-amber-700',
+    'from-purple-600 to-purple-900',
+    'from-cyan-500 to-cyan-700',
+    'from-orange-600 to-orange-800',
+    'from-slate-500 to-slate-700',
 ];
+
+// Dark metallic medal themes: [outerRing, innerFace, iconColor, glowColor]
+const MEDAL_THEMES = [
+    { o:'linear-gradient(145deg,#4a3010 0%,#9a7030 40%,#5c3c14 100%)', i:'linear-gradient(145deg,#1f1208,#2d1c0c)', ic:'#c8943a', g:'rgba(150,110,30,0.3)'  }, // bronze
+    { o:'linear-gradient(145deg,#2a3540 0%,#526880 40%,#2a3540 100%)', i:'linear-gradient(145deg,#0a1018,#141e28)', ic:'#6090b0', g:'rgba(60,100,150,0.25)' }, // steel
+    { o:'linear-gradient(145deg,#4a1010 0%,#801a1a 40%,#4a1010 100%)', i:'linear-gradient(145deg,#120404,#1e0808)', ic:'#a03030', g:'rgba(130,20,20,0.28)'  }, // crimson
+    { o:'linear-gradient(145deg,#2a2a10 0%,#4a4a1e 40%,#2a2a10 100%)', i:'linear-gradient(145deg,#0a0a04,#161608)', ic:'#787830', g:'rgba(90,90,20,0.25)'   }, // olive
+    { o:'linear-gradient(145deg,#1c1c2a 0%,#303048 40%,#1c1c2a 100%)', i:'linear-gradient(145deg,#060608,#0c0c14)', ic:'#5050a0', g:'rgba(60,60,130,0.25)'  }, // obsidian
+    { o:'linear-gradient(145deg,#252525 0%,#484848 40%,#252525 100%)', i:'linear-gradient(145deg,#080808,#121212)', ic:'#606060', g:'rgba(60,60,60,0.22)'   }, // gunmetal
+    { o:'linear-gradient(145deg,#3d200a 0%,#7a4014 40%,#3d200a 100%)', i:'linear-gradient(145deg,#100806,#1e1008)', ic:'#a05828', g:'rgba(120,70,20,0.28)'  }, // copper
+    { o:'linear-gradient(145deg,#0a1e10 0%,#183c20 40%,#0a1e10 100%)', i:'linear-gradient(145deg,#040a06,#0c180e)', ic:'#306040', g:'rgba(30,80,40,0.25)'   }, // forest
+];
+const CHALLENGE_THEME = { o:'linear-gradient(145deg,#6a5010 0%,#c8a020 40%,#6a5010 100%)', i:'linear-gradient(145deg,#181204,#2a2008)', ic:'#e8c040', g:'rgba(180,150,20,0.38)' };
+const achievementGlows = [
+    'rgba(180,30,30,0.22)',
+    'rgba(60,90,160,0.22)',
+    'rgba(20,130,80,0.22)',
+    'rgba(160,110,20,0.22)',
+    'rgba(100,50,180,0.22)',
+    'rgba(10,160,180,0.22)',
+    'rgba(180,70,10,0.22)',
+    'rgba(80,90,100,0.22)',
+];
+
+// Warrior badge shapes — angular, military, forged feel
+const BADGE_SHAPES = [
+    // Military hex — most iconic war badge
+    'polygon(50% 0%, 92% 26%, 92% 74%, 50% 100%, 8% 74%, 8% 26%)',
+    // War shield — warrior's shield
+    'polygon(50% 0%, 100% 18%, 100% 68%, 50% 100%, 0% 68%, 0% 18%)',
+    // Octagon — tactical, strong
+    'polygon(29% 0%,71% 0%,100% 29%,100% 71%,71% 100%,29% 100%,0% 71%,0% 29%)',
+    // Medal cross — military decoration
+    'polygon(34% 0%,66% 0%,66% 34%,100% 34%,100% 66%,66% 66%,66% 100%,34% 100%,34% 66%,0% 66%,0% 34%,34% 34%)',
+    // War diamond — angular power
+    'polygon(50% 0%, 95% 40%, 75% 100%, 25% 100%, 5% 40%)',
+];
+
+// Badge physics size
+const BADGE_SIZE = 86;
+// Max drift speed in px per normalised frame (very slow)
+const MAX_SPEED  = 0.42;
+const MIN_SPEED  = 0.10;
+
+// ── Module-level shared physics registry for collision detection ──────────────
+// Each badge writes its latest { x, y, vx, vy } here every frame.
+const globalPhysics = new Map();
 
 export default function AchievementJar() {
     const { achievementJar, addAchievement, updateAchievement, deleteAchievement } = useData();
@@ -241,111 +288,249 @@ export default function AchievementJar() {
     );
 }
 
-// Floating Achievements Component
+// ── Floating Achievements container ───────────────────────────────────────────
 function FloatingAchievements({ achievements, onAchievementClick }) {
+    const containerRef = useRef(null);
     return (
         <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.2 }}
-            className="glass-panel p-8 min-h-[600px] relative overflow-hidden"
+            ref={containerRef}
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}
+            className="glass-panel relative"
+            style={{ minHeight: '640px', overflow: 'hidden', isolation: 'isolate' }}
         >
-            {/* Background gradient animation */}
-            <div className="absolute inset-0 bg-gradient-to-br from-fire-orange/5 via-transparent to-fire-red/5 animate-pulse"></div>
+            {/* Dark armory background */}
+            <div style={{
+                position: 'absolute', inset: 0, pointerEvents: 'none',
+                background: 'linear-gradient(160deg,#070707 0%,#0e0e0e 100%)',
+            }} />
+            {/* Subtle forge grid texture */}
+            <div style={{
+                position: 'absolute', inset: 0, pointerEvents: 'none',
+                backgroundImage: 'repeating-linear-gradient(0deg,transparent,transparent 39px,rgba(255,255,255,0.018) 39px,rgba(255,255,255,0.018) 40px),repeating-linear-gradient(90deg,transparent,transparent 39px,rgba(255,255,255,0.018) 39px,rgba(255,255,255,0.018) 40px)',
+            }} />
+            {/* Vignette */}
+            <div style={{
+                position: 'absolute', inset: 0, pointerEvents: 'none',
+                background: 'radial-gradient(ellipse at 50% 50%, transparent 40%, rgba(0,0,0,0.7) 100%)',
+            }} />
 
-            {/* Floating achievements */}
-            <div className="relative z-10">
-                {achievements.map((achievement, index) => (
-                    <FloatingAchievementCard
-                        key={achievement.id}
-                        achievement={achievement}
-                        index={index}
-                        onClick={() => onAchievementClick(achievement)}
-                    />
-                ))}
-            </div>
-
-            {/* Motivational overlay text */}
-            <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-0">
-                <h2 className="header-font text-6xl text-white/5 text-center">
-                    YOU ARE<br />UNSTOPPABLE
-                </h2>
-            </div>
+            {achievements.map((achievement, index) => (
+                <FloatingBadge
+                    key={achievement.id}
+                    achievement={achievement}
+                    index={index}
+                    containerRef={containerRef}
+                    onClick={() => onAchievementClick(achievement)}
+                />
+            ))}
         </motion.div>
     );
 }
 
-// Floating Achievement Card
-function FloatingAchievementCard({ achievement, index, onClick }) {
-    const icon = achievementIcons[achievement.iconIndex || 0];
-    const colorClass = achievementColors[achievement.colorIndex || 0];
+// ── Floating Physics Badge ─────────────────────────────────────────────────────
+function FloatingBadge({ achievement, index, containerRef, onClick }) {
+    const id          = achievement.id;
+    const isChallenge = !!achievement.fromChallenge;
+    const icon        = isChallenge ? faCrown : achievementIcons[achievement.iconIndex || 0];
+    const theme       = isChallenge ? CHALLENGE_THEME : MEDAL_THEMES[(achievement.colorIndex || 0) % MEDAL_THEMES.length];
+    const phaseOffset = useMemo(() => index * 2.399, [index]); // golden ratio, unique per badge
 
-    // Grid-based positioning to prevent overlap
-    const cols = 4;
-    const rows = 3;
-    const col = index % cols;
-    const row = Math.floor(index / cols) % rows;
-    
-    // Calculate position with spacing
-    const baseX = (col * (100 / cols)) + (100 / cols / 2) - 6; // Center in cell, -6 for card width
-    const baseY = (row * (100 / rows)) + (100 / rows / 2) - 6; // Center in cell, -6 for card height
-    
-    // Add small random offset for natural feel (but keep in bounds)
-    const randomOffsetX = useMemo(() => (Math.random() - 0.5) * 8, []);
-    const randomOffsetY = useMemo(() => (Math.random() - 0.5) * 8, []);
-    
-    const randomDelay = useMemo(() => Math.random() * 2, []);
-    const randomDuration = useMemo(() => 15 + Math.random() * 10, []);
+    const initialized = useRef(false);
+    const [hovered, setHovered] = useState(false);
+
+    const x      = useMotionValue(-999);
+    const y      = useMotionValue(-999);
+    const rotate = useMotionValue(Math.random() * 360);
+    const counterRotate = useTransform(rotate, r => -r);
+
+    // Register in shared physics world
+    useEffect(() => {
+        globalPhysics.set(id, {
+            x: -999, y: -999,
+            vx: (Math.random() - 0.5) * MAX_SPEED * 1.6,
+            vy: (Math.random() - 0.5) * MAX_SPEED * 1.6,
+        });
+        return () => globalPhysics.delete(id);
+    }, [id]);
+
+    useAnimationFrame((_t, delta) => {
+        if (hovered) return;
+        const container = containerRef.current;
+        if (!container) return;
+
+        const state = globalPhysics.get(id);
+        if (!state) return;
+
+        const W = container.offsetWidth;
+        const H = container.offsetHeight;
+
+        // First frame: place badge randomly inside container
+        if (!initialized.current) {
+            state.x = BADGE_SIZE + Math.random() * (W - BADGE_SIZE * 3);
+            state.y = BADGE_SIZE + Math.random() * (H - BADGE_SIZE * 3);
+            initialized.current = true;
+            x.set(state.x);
+            y.set(state.y);
+            return;
+        }
+
+        const dt = Math.min(delta, 50) / 16;
+
+        let nx = state.x + state.vx * dt;
+        let ny = state.y + state.vy * dt;
+
+        // ── Badge-badge collision ──────────────────────────────────────────────
+        const R = BADGE_SIZE * 0.52; // collision radius (slightly inset)
+        for (const [otherId, other] of globalPhysics) {
+            if (otherId === id || other.x === -999) continue;
+            const ddx  = nx - other.x;
+            const ddy  = ny - other.y;
+            const dist = Math.hypot(ddx, ddy);
+            const minD = R * 2;
+            if (dist < minD && dist > 0.01) {
+                const nx_ = ddx / dist;
+                const ny_ = ddy / dist;
+                // Relative velocity along collision normal
+                const dvn = (state.vx - other.vx) * nx_ + (state.vy - other.vy) * ny_;
+                if (dvn < 0) { // only if approaching
+                    const restitution = 0.20; // soft, slow bounce
+                    const imp = -(1 + restitution) * dvn * 0.45;
+                    state.vx += imp * nx_;
+                    state.vy += imp * ny_;
+                }
+                // Gently push apart to prevent clumping
+                const overlap = (minD - dist) * 0.12 * dt;
+                nx += nx_ * overlap;
+                ny += ny_ * overlap;
+            }
+        }
+
+        // ── Soft center-pull (keeps most time inside) ─────────────────────────
+        const pullZone = Math.max(W, H) * 0.42;
+        const cx   = W * 0.5 - BADGE_SIZE * 0.5;
+        const cy   = H * 0.5 - BADGE_SIZE * 0.5;
+        const ddx2 = cx - nx;
+        const ddy2 = cy - ny;
+        const d2   = Math.hypot(ddx2, ddy2);
+        if (d2 > pullZone && d2 > 0) {
+            const pull = 0.010 * ((d2 - pullZone) / pullZone) * dt;
+            state.vx  += (ddx2 / d2) * pull;
+            state.vy  += (ddy2 / d2) * pull;
+        }
+
+        // ── Speed limits ──────────────────────────────────────────────────────
+        let speed = Math.hypot(state.vx, state.vy);
+        if (speed > MAX_SPEED) {
+            state.vx = (state.vx / speed) * MAX_SPEED;
+            state.vy = (state.vy / speed) * MAX_SPEED;
+            speed    = MAX_SPEED;
+        }
+        // Keep badge moving — never fully stop
+        if (speed < MIN_SPEED) {
+            const angle = Math.random() * Math.PI * 2;
+            state.vx = Math.cos(angle) * MIN_SPEED;
+            state.vy = Math.sin(angle) * MIN_SPEED;
+        }
+
+        // ── Tiny random perturbation for organic drift ────────────────────────
+        if (Math.random() < 0.003) {
+            state.vx += (Math.random() - 0.5) * 0.12;
+            state.vy += (Math.random() - 0.5) * 0.12;
+        }
+
+        // ── Smooth edge wrap: only wrap after badge is FULLY outside ──────────
+        // This lets the badge visibly slide through the edge before reappearing.
+        const EXIT = BADGE_SIZE * 1.05;
+        if (nx < -EXIT)       nx = W + EXIT * 0.08;
+        else if (nx > W + EXIT) nx = -EXIT * 0.08;
+        if (ny < -EXIT)       ny = H + EXIT * 0.08;
+        else if (ny > H + EXIT) ny = -EXIT * 0.08;
+
+        // ── Pendulum wobble: heavy medal feel, not cartoon spin ────────────────
+        rotate.set(
+            Math.sin(_t * 0.00018 + phaseOffset) * 8 +
+            Math.sin(_t * 0.00031 + phaseOffset * 1.7) * 3
+        );
+
+        state.x = nx; state.y = ny;
+        x.set(nx); y.set(ny);
+    });
 
     return (
         <motion.div
-            initial={{ opacity: 0, scale: 0 }}
-            animate={{
-                opacity: 1,
-                scale: 1,
-                x: [0, 15, -10, 0],
-                y: [0, -20, 10, 0],
-            }}
-            transition={{
-                opacity: { duration: 0.5, delay: index * 0.1 },
-                scale: { duration: 0.5, delay: index * 0.1 },
-                x: {
-                    duration: randomDuration,
-                    repeat: Infinity,
-                    ease: 'easeInOut',
-                    delay: randomDelay,
-                },
-                y: {
-                    duration: randomDuration,
-                    repeat: Infinity,
-                    ease: 'easeInOut',
-                    delay: randomDelay,
-                },
-            }}
-            className="absolute cursor-pointer group z-10"
-            style={{
-                left: `${baseX + randomOffsetX}%`,
-                top: `${baseY + randomOffsetY}%`,
-            }}
+            style={{ position:'absolute', width:BADGE_SIZE, height:BADGE_SIZE, x, y, rotate, zIndex: hovered ? 40 : 10, cursor:'pointer' }}
+            initial={{ scale:0, opacity:0 }}
+            animate={{ scale:1, opacity:1 }}
+            transition={{ duration:0.9, delay: index * 0.10, type:'spring', bounce:0.15 }}
+            whileHover={{ scale:1.18 }}
+            onHoverStart={() => setHovered(true)}
+            onHoverEnd={() => setHovered(false)}
             onClick={onClick}
         >
-            <div className={`w-24 h-24 bg-gradient-to-br ${colorClass} shadow-lg group-hover:shadow-2xl group-hover:scale-110 transition-all flex items-center justify-center relative overflow-hidden animate-glow`}
-                style={{ borderRadius: '4px' }}>
-                {/* Shine effect */}
-                <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                
-                <FontAwesomeIcon icon={icon} className="text-3xl text-white relative z-10 drop-shadow-lg" />
-                
-                {/* 3D Glow effect */}
-                <div className="absolute inset-0 bg-white/10 blur-xl opacity-0 group-hover:opacity-100 transition-opacity"></div>
+            {/* Under-glow — very dim, matches metal color */}
+            <div style={{
+                position:'absolute', inset:-12, borderRadius:'50%',
+                background: theme.g,
+                filter:'blur(22px)',
+                opacity: hovered ? 0.65 : 0.22,
+                transition:'opacity 0.6s ease',
+                pointerEvents:'none',
+            }} />
+
+            {/* Outer medal ring — metallic gradient */}
+            <div style={{
+                position:'absolute', inset:0, borderRadius:'50%',
+                background: theme.o,
+                boxShadow: [
+                    'inset 0 2px 5px rgba(255,255,255,0.14)',
+                    'inset 0 -2px 5px rgba(0,0,0,0.65)',
+                    '0 8px 28px rgba(0,0,0,0.9)',
+                    '0 2px 6px rgba(0,0,0,0.7)',
+                ].join(','),
+            }} />
+
+            {/* Inner medal face — dark recess */}
+            <div style={{
+                position:'absolute', inset:7, borderRadius:'50%',
+                background: theme.i,
+                boxShadow:'inset 0 2px 8px rgba(0,0,0,0.85), inset 0 -1px 2px rgba(255,255,255,0.03)',
+            }} />
+
+            {/* Engraving detail ring */}
+            <div style={{
+                position:'absolute', inset:11, borderRadius:'50%',
+                border: `1px solid rgba(255,255,255,${isChallenge ? '0.14' : '0.06'})`,
+            }} />
+
+            {/* Challenge: second gold detail ring */}
+            {isChallenge && (
+                <div style={{ position:'absolute', inset:15, borderRadius:'50%', border:'1px solid rgba(200,160,20,0.2)' }} />
+            )}
+
+            {/* Icon */}
+            <div style={{ position:'absolute', inset:0, display:'flex', alignItems:'center', justifyContent:'center' }}>
+                <FontAwesomeIcon
+                    icon={icon}
+                    style={{
+                        fontSize: isChallenge ? 26 : 22,
+                        color: theme.ic,
+                        opacity: 0.88,
+                        filter: `drop-shadow(0 2px 5px rgba(0,0,0,0.95)) drop-shadow(0 0 ${hovered ? 10 : 4}px ${theme.g})`,
+                        transition: 'filter 0.5s ease',
+                    }}
+                />
             </div>
-            
-            {/* Tooltip on hover */}
-            <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-                <div className="bg-black/90 text-white text-xs px-3 py-2 rounded-lg whitespace-nowrap shadow-xl">
+
+            {/* Tooltip */}
+            <motion.div
+                style={{ position:'absolute', left:'50%', top:'108%', translateX:'-50%', rotate: counterRotate, pointerEvents:'none', originX:'50%', originY:0, whiteSpace:'nowrap' }}
+                animate={{ opacity: hovered ? 1 : 0, y: hovered ? 0 : 4 }}
+                transition={{ duration: 0.14 }}
+            >
+                <div style={{ background:'rgba(4,4,6,0.96)', border:'1px solid rgba(255,255,255,0.09)', color:'#a0a0a0', fontSize:10, padding:'3px 9px', borderRadius:5, letterSpacing:'0.06em', textTransform:'uppercase', fontWeight:700 }}>
                     {achievement.title}
                 </div>
-            </div>
+            </motion.div>
         </motion.div>
     );
 }
@@ -572,27 +757,58 @@ function AchievementFormModal({ isOpen, onClose, onSave, initialData }) {
 
 // Achievement Detail Modal
 function AchievementDetailModal({ isOpen, onClose, achievement, onEdit, onDelete }) {
+    const [confirmDel, setConfirmDel] = React.useState(false);
     if (!achievement) return null;
 
+    const isChallenge = !!achievement.fromChallenge;
     const icon = achievementIcons[achievement.iconIndex || 0];
     const colorClass = achievementColors[achievement.colorIndex || 0];
     const date = new Date(achievement.date).toLocaleDateString('en-US', {
-        weekday: 'long',
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
+        weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
     });
 
     return (
-        <Modal isOpen={isOpen} onClose={onClose}>
+        <Modal isOpen={isOpen} onClose={() => { setConfirmDel(false); onClose(); }}>
             <div className="space-y-6">
                 {/* Icon and Title */}
                 <div className="text-center">
-                    <div className={`w-32 h-32 rounded-2xl bg-gradient-to-br ${colorClass} shadow-2xl flex items-center justify-center mx-auto mb-6 relative overflow-hidden`}>
-                        <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/20 to-transparent"></div>
-                        <FontAwesomeIcon icon={icon} className="text-5xl text-white relative z-10" />
+                    {/* Badge icon — gem ring for challenge achievements */}
+                    <div className="relative w-32 h-32 mx-auto mb-6" style={{ display: 'inline-block' }}>
+                        {isChallenge && (
+                            <div style={{
+                                position: 'absolute', inset: -6,
+                                borderRadius: '50%',
+                                background: 'conic-gradient(from 0deg, #a855f7, #f59e0b, #a855f7, #7c3aed, #f59e0b, #a855f7)',
+                                animation: 'spin 4s linear infinite',
+                                zIndex: 0,
+                            }} />
+                        )}
+                        <div className={`w-32 h-32 rounded-2xl bg-gradient-to-br ${colorClass} shadow-2xl flex items-center justify-center relative overflow-hidden`}
+                            style={{
+                                position: 'relative', zIndex: 1,
+                                boxShadow: isChallenge
+                                    ? '0 0 30px rgba(168,85,247,0.5), 0 0 60px rgba(245,158,11,0.3)'
+                                    : undefined,
+                            }}>
+                            <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/20 to-transparent" />
+                            <FontAwesomeIcon icon={icon} className="text-5xl text-white relative z-10" />
+                            {isChallenge && (
+                                <div style={{
+                                    position: 'absolute', top: 4, right: 4,
+                                    background: 'rgba(168,85,247,0.9)',
+                                    borderRadius: 4, padding: '1px 4px',
+                                    fontSize: 9, fontWeight: 700, color: 'white',
+                                    letterSpacing: '0.06em',
+                                }}>💎 CHALLENGE</div>
+                            )}
+                        </div>
                     </div>
                     <h2 className="header-font text-3xl fire-text mb-2">{achievement.title}</h2>
+                    {isChallenge && (
+                        <p className="text-purple-400 text-xs font-bold uppercase tracking-widest mb-1">
+                            ⚔️ Challenge Conquest
+                        </p>
+                    )}
                     <p className="text-gray-400 flex items-center gap-2 justify-center">
                         <FontAwesomeIcon icon={faCalendar} />
                         {date}
@@ -609,32 +825,52 @@ function AchievementDetailModal({ isOpen, onClose, achievement, onEdit, onDelete
                 )}
 
                 {/* Motivational Quote */}
-                <div className="glass-panel p-6 bg-gradient-to-br from-fire-orange/10 to-fire-red/10 border-fire-orange/30">
+                <div className={`glass-panel p-6 bg-gradient-to-br ${
+                    isChallenge
+                        ? 'from-purple-900/30 to-amber-900/20 border-purple-500/30'
+                        : 'from-fire-orange/10 to-fire-red/10 border-fire-orange/30'
+                }`}>
                     <p className="text-center italic text-gray-300">
-                        "Remember this moment when you need strength. You've done it before, you can do it again."
+                        {isChallenge
+                            ? '"You didn\'t miss a single day. That is what separates warriors from everyone else."'
+                            : '"Remember this moment when you need strength. You\'ve done it before, you can do it again."'
+                        }
                     </p>
                 </div>
 
                 {/* Action Buttons */}
                 <div className="flex gap-3">
-                    <button
-                        onClick={() => onEdit(achievement)}
-                        className="flex-1 bg-blue-600 hover:bg-blue-500 text-white px-6 py-3 rounded-xl transition-colors font-semibold flex items-center justify-center gap-2"
-                    >
-                        <FontAwesomeIcon icon={faEdit} />
-                        Edit
-                    </button>
-                    <button
-                        onClick={() => {
-                            if (window.confirm('Are you sure you want to delete this achievement?')) {
-                                onDelete(achievement.id);
-                            }
-                        }}
-                        className="flex-1 bg-red-600 hover:bg-red-500 text-white px-6 py-3 rounded-xl transition-colors font-semibold flex items-center justify-center gap-2"
-                    >
-                        <FontAwesomeIcon icon={faTrash} />
-                        Delete
-                    </button>
+                    {!isChallenge && (
+                        <button
+                            onClick={() => onEdit(achievement)}
+                            className="flex-1 bg-blue-600 hover:bg-blue-500 text-white px-6 py-3 rounded-xl transition-colors font-semibold flex items-center justify-center gap-2"
+                        >
+                            <FontAwesomeIcon icon={faEdit} /> Edit
+                        </button>
+                    )}
+                    {!confirmDel ? (
+                        <button
+                            onClick={() => setConfirmDel(true)}
+                            className="flex-1 bg-red-700 hover:bg-red-600 text-white px-6 py-3 rounded-xl transition-colors font-semibold flex items-center justify-center gap-2"
+                        >
+                            <FontAwesomeIcon icon={faTrash} /> Delete
+                        </button>
+                    ) : (
+                        <div className="flex-1 flex gap-2">
+                            <button
+                                onClick={() => setConfirmDel(false)}
+                                className="flex-1 bg-white/10 hover:bg-white/20 text-gray-300 px-4 py-3 rounded-xl font-semibold transition-colors text-sm"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={() => { setConfirmDel(false); onDelete(achievement.id); }}
+                                className="flex-1 bg-red-600 hover:bg-red-500 text-white px-4 py-3 rounded-xl font-bold transition-colors text-sm flex items-center justify-center gap-1"
+                            >
+                                <FontAwesomeIcon icon={faTrash} /> Confirm
+                            </button>
+                        </div>
+                    )}
                 </div>
             </div>
         </Modal>

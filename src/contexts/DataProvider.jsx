@@ -712,7 +712,8 @@ export function DataProvider({ children }) {
             id: crypto.randomUUID(),
             ...challengeData,
             completed: false,
-            progress: 0,
+            currentStreak: 0,
+            lastCheckIn: null, // 'YYYY-MM-DD'
             createdAt: Date.now(),
             completedAt: null
         };
@@ -738,6 +739,57 @@ export function DataProvider({ children }) {
             return newState;
         });
     }
+
+    // Daily check-in for a challenge streak
+    function checkInChallenge(id) {
+        const today = new Date().toISOString().split('T')[0];
+        setChallenges(prev => {
+            const newState = prev.map(c => {
+                if (c.id !== id || c.completed) return c;
+                if (c.lastCheckIn === today) return c; // already checked in today
+
+                const yesterday = new Date();
+                yesterday.setDate(yesterday.getDate() - 1);
+                const yStr = yesterday.toISOString().split('T')[0];
+
+                const wasYesterday = c.lastCheckIn === yStr;
+                const newStreak = (c.lastCheckIn === null || wasYesterday) ? (c.currentStreak || 0) + 1 : 1;
+                const targetDays = c.targetDays || 30;
+                const isCompleted = newStreak >= targetDays;
+
+                if (isCompleted) {
+                    // Auto-add to Achievement Jar
+                    const gem = {
+                        id: crypto.randomUUID(),
+                        title: `Completed: ${c.title}`,
+                        description: `Crushed a ${targetDays}-day challenge without missing a single day. UNSTOPPABLE.`,
+                        iconIndex: 8, // gem icon
+                        colorIndex: Math.floor(Math.random() * 8),
+                        date: Date.now(),
+                        fromChallenge: true,
+                    };
+                    setAchievementJar(jarPrev => {
+                        const newJar = [gem, ...jarPrev];
+                        if (currentUser) saveAchievementJar(currentUser.uid, newJar);
+                        return newJar;
+                    });
+                    addXP(difficultyXP[c.difficulty] || 100);
+                }
+
+                return {
+                    ...c,
+                    currentStreak: newStreak,
+                    lastCheckIn: today,
+                    completed: isCompleted,
+                    completedAt: isCompleted ? Date.now() : null,
+                };
+            });
+            if (currentUser) saveChallenges(currentUser.uid, newState);
+            return newState;
+        });
+    }
+
+    const difficultyXP = { easy: 50, medium: 100, hard: 250, extreme: 500 };
 
     const value = {
         userData,
@@ -781,6 +833,7 @@ export function DataProvider({ children }) {
         addChallenge,      // Add challenge
         updateChallenge,   // Update challenge
         deleteChallenge,   // Delete challenge
+        checkInChallenge,  // Daily check-in streak
         dailyLesson,
         dailyQuote,
         setDailyLesson: (lesson) => {

@@ -139,7 +139,7 @@ export default function DynamicQuote() {
                     {/* Header */}
                     <div className="p-4 border-b border-white/5 flex justify-between items-center bg-black/20">
                         <h3 className="text-lg font-medium text-white flex items-center gap-2">
-                            <FontAwesomeIcon icon={faYoutube} className="text-red-500" /> Daily Lesson
+                            <FontAwesomeIcon icon={faYoutube} className="text-red-500" /> Motivation Short
                         </h3>
                         <button
                             onClick={fetchNewVideo}
@@ -154,16 +154,19 @@ export default function DynamicQuote() {
                         <div>
                             <div className="aspect-video w-full bg-black">
                                 <iframe
-                                    src={`https://www.youtube.com/embed/${dailyLesson.videoId}?autoplay=0&rel=0`}
+                                    src={`https://www.youtube.com/embed/${dailyLesson.videoId}?autoplay=0&rel=0&modestbranding=1`}
                                     title={dailyLesson.title}
                                     className="w-full h-full"
                                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                                     allowFullScreen
                                 />
                             </div>
-                            <div className="p-4 bg-white/5">
-                                <h4 className="text-white font-medium line-clamp-1">{dailyLesson.title}</h4>
-                                <p className="text-xs text-gray-400 mt-1">{dailyLesson.channel}</p>
+                            <div className="p-4 bg-white/5 space-y-1">
+                                <h4 className="text-white font-medium line-clamp-2">{dailyLesson.title}</h4>
+                                <p className="text-xs text-gray-400">{dailyLesson.channel}</p>
+                                {dailyLesson.query && (
+                                    <p className="text-xs text-[var(--color-primary)] opacity-70 mt-1">🔍 {dailyLesson.query}</p>
+                                )}
                             </div>
                         </div>
                     ) : videoError ? (

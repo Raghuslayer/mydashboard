@@ -285,6 +285,12 @@
     100% { transform: rotate(360deg); }
   }
 
+  /* Conic spin — used by challenge badge ring in AchievementJar detail modal */
+  @keyframes spin {
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(360deg); }
+  }
+
   @keyframes pulse-scale {
     0%, 100% { transform: scale(1); }
     50% { transform: scale(1.1); }
@@ -347,6 +353,19 @@
   .animate-slide-in-right {
     animation: slide-in-right 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
   }
+}
+
+/* GEM ICON - Achievement Vault */
+.gem-icon {
+  font-size: 5rem;
+  line-height: 1;
+  filter: drop-shadow(0 0 18px rgba(168,85,247,0.8)) drop-shadow(0 0 40px rgba(168,85,247,0.4));
+  animation: gem-pulse 2.5s ease-in-out infinite;
+}
+
+@keyframes gem-pulse {
+  0%, 100% { filter: drop-shadow(0 0 18px rgba(168,85,247,0.8)) drop-shadow(0 0 40px rgba(168,85,247,0.4)); transform: scale(1); }
+  50%       { filter: drop-shadow(0 0 30px rgba(168,85,247,1.0)) drop-shadow(0 0 60px rgba(99,102,241,0.6)); transform: scale(1.08); }
 }
 
 /* TACTICAL SCROLLBAR */
