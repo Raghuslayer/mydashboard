@@ -52,7 +52,7 @@ const sidebarGroups = [
         label: 'Inspiration',
         icon: faLightbulb,
         items: [
-            { id: 'achievementJar', label: 'Achievement Jar', icon: 'faHeart' },
+            { id: 'achievementJar', label: 'Achievements Resume', icon: 'faHeart' },
             { id: 'challenges', label: 'Challenges', icon: 'faCrosshairs' },
             { id: 'quote', label: 'Daily Wisdom', icon: 'faQuoteRight' },
             { id: 'vault', label: 'Motivation Vault', icon: 'faFilm' },

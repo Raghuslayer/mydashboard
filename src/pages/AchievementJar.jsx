@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
-import { motion, useMotionValue, useAnimationFrame, useTransform } from 'framer-motion';
+import { motion, useMotionValue, useAnimationFrame } from 'framer-motion';
 import { useData } from '../contexts/DataProvider';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
@@ -178,7 +178,7 @@ export default function AchievementJar() {
                                     WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
                                     letterSpacing: '0.06em', marginBottom: 2,
                                 }}>
-                                    ACHIEVEMENT VAULT
+                                    ACHIEVEMENTS RESUME
                                 </h1>
                                 <p style={{ color: 'rgba(160,120,100,0.65)', fontSize: 12, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
                                     Forge your legacy. Every win is forged in iron.
@@ -343,7 +343,7 @@ export default function AchievementJar() {
                     <FontAwesomeIcon icon={faTrophy} style={{ fontSize: 42, color: '#c8943a', filter: 'drop-shadow(0 0 10px rgba(200,148,58,0.7))' }} />
                 </motion.div>
                 <h3 style={{ fontFamily: "'Teko', sans-serif", fontSize: '2rem', color: '#c0242a', WebkitTextFillColor: '#c0242a', letterSpacing: '0.06em', marginBottom: 8 }}>
-                    THE VAULT IS EMPTY
+                    THE RESUME IS EMPTY
                 </h3>
                 <p style={{ color: 'rgba(160,120,100,0.65)', fontSize: 13, letterSpacing: '0.04em', marginBottom: 28, maxWidth: 360, margin: '0 auto 28px' }}>
                     No victories yet. Every legend starts with a single act of courage.
@@ -417,12 +417,29 @@ export default function AchievementJar() {
 // ── Floating Achievements container ───────────────────────────────────────────
 function FloatingAchievements({ achievements, onAchievementClick }) {
     const containerRef = useRef(null);
+    // Cache container dimensions — read once via ResizeObserver, NOT per-frame per-badge
+    const dimRef = useRef({ w: 800, h: 640 });
+
+    useEffect(() => {
+        const el = containerRef.current;
+        if (!el) return;
+        const ro = new ResizeObserver(entries => {
+            for (const e of entries) {
+                dimRef.current = { w: e.contentRect.width, h: e.contentRect.height };
+            }
+        });
+        ro.observe(el);
+        // Set initial dims immediately
+        dimRef.current = { w: el.offsetWidth, h: el.offsetHeight };
+        return () => ro.disconnect();
+    }, []);
+
     return (
         <motion.div
             ref={containerRef}
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}
             className="glass-panel relative"
-            style={{ minHeight: '640px', overflow: 'hidden', isolation: 'isolate' }}
+            style={{ minHeight: '640px', overflow: 'hidden', isolation: 'isolate', contain: 'layout style' }}
         >
             {/* Dark armory background */}
             <div style={{
@@ -445,7 +462,7 @@ function FloatingAchievements({ achievements, onAchievementClick }) {
                     key={achievement.id}
                     achievement={achievement}
                     index={index}
-                    containerRef={containerRef}
+                    dimRef={dimRef}
                     onClick={() => onAchievementClick(achievement)}
                 />
             ))}
@@ -454,7 +471,7 @@ function FloatingAchievements({ achievements, onAchievementClick }) {
 }
 
 // ── Floating Physics Badge ─────────────────────────────────────────────────────
-function FloatingBadge({ achievement, index, containerRef, onClick }) {
+function FloatingBadge({ achievement, index, dimRef, onClick }) {
     const id          = achievement.id;
     const isChallenge = !!achievement.fromChallenge;
     const isPriority  = !!achievement.isPriority;
@@ -467,8 +484,7 @@ function FloatingBadge({ achievement, index, containerRef, onClick }) {
 
     const x      = useMotionValue(-999);
     const y      = useMotionValue(-999);
-    const rotate = useMotionValue(Math.random() * 360);
-    const counterRotate = useTransform(rotate, r => -r);
+    const rotate = useMotionValue(0);
 
     // Register in shared physics world
     useEffect(() => {
@@ -482,14 +498,11 @@ function FloatingBadge({ achievement, index, containerRef, onClick }) {
 
     useAnimationFrame((_t, delta) => {
         if (hovered) return;
-        const container = containerRef.current;
-        if (!container) return;
-
+        // Use cached dimensions from parent ResizeObserver — NO layout reflow
+        const { w: W, h: H } = dimRef.current;
+        if (!W || !H) return;
         const state = globalPhysics.get(id);
         if (!state) return;
-
-        const W = container.offsetWidth;
-        const H = container.offsetHeight;
 
         // First frame: place badge randomly inside container
         if (!initialized.current) {
@@ -585,27 +598,31 @@ function FloatingBadge({ achievement, index, containerRef, onClick }) {
 
     return (
         <motion.div
-            style={{ position:'absolute', width:BADGE_SIZE, height:BADGE_SIZE, x, y, rotate, zIndex: hovered ? 40 : 10, cursor:'pointer' }}
-            initial={{ scale:0, opacity:0 }}
-            animate={{ scale:1, opacity:1 }}
-            transition={{ duration:0.9, delay: index * 0.10, type:'spring', bounce:0.15 }}
-            whileHover={{ scale:1.18 }}
+            style={{
+                position: 'absolute', width: BADGE_SIZE, height: BADGE_SIZE,
+                x, y, rotate,
+                zIndex: hovered ? 40 : 10,
+                cursor: 'pointer',
+                willChange: 'transform',   // GPU compositor layer — eliminates jitter
+            }}
+            initial={{ scale: 0, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ duration: 0.9, delay: index * 0.10, type: 'spring', bounce: 0.15 }}
+            whileHover={{ scale: 1.18 }}
             onHoverStart={() => setHovered(true)}
             onHoverEnd={() => setHovered(false)}
             onClick={onClick}
         >
-            {/* Under-glow — scaled by priority tier */}
+            {/* Under-glow — box-shadow based (GPU composited, no filter blur repaints) */}
             <div style={{
-                position:'absolute', inset:-12, borderRadius:'50%',
-                background: isChallenge
-                    ? 'rgba(200,148,20,0.50)'
+                position: 'absolute', inset: -8, borderRadius: '50%',
+                boxShadow: isChallenge
+                    ? `0 0 28px 10px rgba(200,148,20,${hovered ? 0.55 : 0.35})`
                     : isPriority
-                    ? theme.g.replace('0.3)', '0.50)').replace('0.25)', '0.50)').replace('0.28)', '0.50)').replace('0.22)', '0.50)').replace('0.38)', '0.55)')
-                    : theme.g,
-                filter:'blur(22px)',
-                opacity: hovered ? 0.85 : (isChallenge ? 0.50 : isPriority ? 0.40 : 0.20),
-                transition:'opacity 0.6s ease',
-                pointerEvents:'none',
+                    ? `0 0 24px 8px ${theme.g.replace(')', `, ${hovered ? 0.55 : 0.40})`).replace('rgba(', 'rgba(')}`
+                    : `0 0 18px 5px ${theme.g.replace(')', `, ${hovered ? 0.45 : 0.18})`).replace('rgba(', 'rgba(')}`,
+                transition: 'box-shadow 0.5s ease',
+                pointerEvents: 'none',
             }} />
 
             {/* Outer medal ring — metallic gradient */}
