@@ -5,7 +5,7 @@ import { faArrowsRotate } from '@fortawesome/free-solid-svg-icons';
 import { staticData, routineTabs } from '../data/staticData';
 
 export default function StatsBar() {
-    const { userData, checkedStates, dailyTasks, getRoutineTasks, editableRoutineTabs } = useData();
+    const { userData, checkedStates, dailyTasks, getRoutineTasks, editableRoutineTabs, achievementJar } = useData();
 
     // Calculate XP progress with safety checks
     const level = userData?.level || 1;
@@ -108,6 +108,28 @@ export default function StatsBar() {
                     </div>
                     <p className="text-[10px] text-gray-500 mt-1">{progress.completed}/{progress.total} done</p>
                 </div>
+
+                {/* Achievement Vault Counter */}
+                {achievementJar && achievementJar.length > 0 && (
+                    <div style={{
+                        display: 'flex', flexDirection: 'column', gap: 2,
+                    }}>
+                        <div style={{ fontSize: 9, color: 'rgba(160,110,80,0.65)', letterSpacing: '0.18em', textTransform: 'uppercase', marginBottom: 1 }}>
+                            Vault
+                        </div>
+                        <div style={{
+                            display: 'flex', alignItems: 'center', gap: 5,
+                            background: 'rgba(192,36,42,0.12)',
+                            border: '1px solid rgba(192,36,42,0.28)',
+                            borderRadius: 6, padding: '3px 10px',
+                        }}>
+                            <span style={{ fontSize: 13 }}>🏆</span>
+                            <span style={{ fontFamily: "'Teko', sans-serif", fontSize: '1.1rem', fontWeight: 700, color: '#c8943a', lineHeight: 1 }}>
+                                {achievementJar.length}
+                            </span>
+                        </div>
+                    </div>
+                )}
 
                 {/* Reset Button */}
                 <button

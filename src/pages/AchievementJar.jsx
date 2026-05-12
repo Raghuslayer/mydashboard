@@ -126,45 +126,144 @@ export default function AchievementJar() {
 
     return (
         <div className="space-y-6 animate-in">
-            {/* Header */}
+            {/* Header — Warrior Forge Panel */}
             <motion.div
                 initial={{ opacity: 0, y: -20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="glass-panel p-6 relative overflow-hidden"
+                style={{
+                    background: 'linear-gradient(160deg, rgba(18,8,8,0.96) 0%, rgba(10,5,5,0.98) 100%)',
+                    border: '1px solid rgba(192,36,42,0.30)',
+                    borderRadius: 14,
+                    padding: '28px 32px',
+                    position: 'relative',
+                    overflow: 'hidden',
+                }}
             >
-                <div className="absolute inset-0 bg-gradient-to-br from-fire-orange/10 to-fire-red/10 animate-pulse"></div>
-                <div className="relative z-10">
-                    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                        <div>
-                            <h1 className="header-font text-4xl fire-text mb-2 flex items-center gap-3 animate-slide-in-left">
-                                <motion.div
-                                    animate={{ rotate: [0, 10, -10, 0] }}
-                                    transition={{ duration: 2, repeat: Infinity }}
-                                >
-                                    <FontAwesomeIcon icon={faTrophy} className="text-3xl" />
-                                </motion.div>
-                                Achievement Jar
-                            </h1>
-                            <p className="text-gray-400">
-                                Your personal cookie jar of victories. When you feel low, remember these moments.
-                            </p>
-                            <p className="text-sm text-fire-orange mt-2 font-semibold animate-pulse-scale">
-                                {filteredAchievements.length} Achievement{filteredAchievements.length !== 1 ? 's' : ''} Collected
-                            </p>
+                {/* Forge grid texture */}
+                <div style={{
+                    position: 'absolute', inset: 0, pointerEvents: 'none',
+                    backgroundImage: 'repeating-linear-gradient(0deg,transparent,transparent 23px,rgba(192,36,42,0.04) 23px,rgba(192,36,42,0.04) 24px),repeating-linear-gradient(90deg,transparent,transparent 23px,rgba(192,36,42,0.04) 23px,rgba(192,36,42,0.04) 24px)',
+                }} />
+                {/* Top crimson accent line */}
+                <div style={{
+                    position: 'absolute', top: 0, left: '10%', right: '10%', height: 2,
+                    background: 'linear-gradient(90deg, transparent, #c0242a, transparent)',
+                    boxShadow: '0 0 18px rgba(192,36,42,0.7)',
+                }} />
+
+                <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 24, flexWrap: 'wrap' }}>
+                    {/* Left: title + counter */}
+                    <div>
+                        {/* Title row */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 8 }}>
+                            {/* Trophy — slow heavy pendulum, not cartoon spin */}
+                            <motion.div
+                                animate={{ rotate: [-6, 6, -6] }}
+                                transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
+                                style={{
+                                    width: 52, height: 52, borderRadius: '50%',
+                                    background: 'linear-gradient(145deg, #4a3010, #9a7030)',
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                    boxShadow: '0 4px 20px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.1)',
+                                    flexShrink: 0,
+                                }}
+                            >
+                                <FontAwesomeIcon icon={faTrophy} style={{ fontSize: 22, color: '#c8943a', filter: 'drop-shadow(0 0 8px rgba(200,148,58,0.6))' }} />
+                            </motion.div>
+                            <div>
+                                <h1 style={{
+                                    fontFamily: "'Teko', sans-serif",
+                                    fontSize: '2.6rem', fontWeight: 700, lineHeight: 1,
+                                    background: 'linear-gradient(135deg, #c0242a 0%, #e05028 50%, #c8943a 100%)',
+                                    WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+                                    letterSpacing: '0.06em', marginBottom: 2,
+                                }}>
+                                    ACHIEVEMENT VAULT
+                                </h1>
+                                <p style={{ color: 'rgba(160,120,100,0.65)', fontSize: 12, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                                    Forge your legacy. Every win is forged in iron.
+                                </p>
+                            </div>
                         </div>
-                        <motion.button
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
-                            onClick={() => {
-                                setEditingAchievement(null);
-                                setShowAddModal(true);
-                            }}
-                            className="bg-gradient-to-r from-[var(--gradient-from)] via-[var(--gradient-via)] to-[var(--gradient-to)] text-white px-6 py-3 font-semibold flex items-center gap-2 justify-center btn-3d"
-                        >
-                            <FontAwesomeIcon icon={faPlus} />
-                            Add Achievement
-                        </motion.button>
+
+                        {/* Achievement counter — masculine war-badge style */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 6 }}>
+                            <motion.div
+                                key={filteredAchievements.length}
+                                initial={{ scale: 0.5, opacity: 0 }}
+                                animate={{ scale: 1, opacity: 1 }}
+                                transition={{ type: 'spring', stiffness: 400, damping: 15 }}
+                                style={{
+                                    display: 'inline-flex', alignItems: 'center', gap: 8,
+                                    background: 'linear-gradient(135deg, rgba(192,36,42,0.20), rgba(140,20,20,0.10))',
+                                    border: '1px solid rgba(192,36,42,0.40)',
+                                    borderRadius: 8, padding: '6px 14px',
+                                    boxShadow: '0 0 20px rgba(192,36,42,0.18)',
+                                }}
+                            >
+                                <FontAwesomeIcon icon={faMedal} style={{ color: '#c8943a', fontSize: 13 }} />
+                                <span style={{
+                                    fontFamily: "'Teko', sans-serif",
+                                    fontSize: '1.6rem', fontWeight: 700, lineHeight: 1,
+                                    color: '#c0242a', letterSpacing: '0.04em',
+                                    WebkitTextFillColor: '#c0242a',
+                                }}>{filteredAchievements.length}</span>
+                                <span style={{ fontSize: 11, color: 'rgba(180,140,120,0.70)', letterSpacing: '0.10em', textTransform: 'uppercase', WebkitTextFillColor: 'rgba(180,140,120,0.70)' }}>
+                                    {filteredAchievements.length === 1 ? 'Victory' : 'Victories'} Forged
+                                </span>
+                            </motion.div>
+                            {achievementJar.filter(a => a.isPriority).length > 0 && (
+                                <div style={{
+                                    display: 'inline-flex', alignItems: 'center', gap: 6,
+                                    background: 'rgba(200,148,58,0.10)',
+                                    border: '1px solid rgba(200,148,58,0.35)',
+                                    borderRadius: 8, padding: '6px 12px',
+                                }}>
+                                    <FontAwesomeIcon icon={faCrown} style={{ color: '#c8943a', fontSize: 11 }} />
+                                    <span style={{ fontSize: 11, color: 'rgba(200,148,58,0.80)', letterSpacing: '0.08em', textTransform: 'uppercase', WebkitTextFillColor: 'rgba(200,148,58,0.80)' }}>
+                                        {achievementJar.filter(a => a.isPriority).length} Priority
+                                    </span>
+                                </div>
+                            )}
+                            {achievementJar.filter(a => a.fromChallenge).length > 0 && (
+                                <div style={{
+                                    display: 'inline-flex', alignItems: 'center', gap: 6,
+                                    background: 'rgba(192,36,42,0.08)',
+                                    border: '1px solid rgba(192,36,42,0.28)',
+                                    borderRadius: 8, padding: '6px 12px',
+                                }}>
+                                    <FontAwesomeIcon icon={faFire} style={{ color: '#c0242a', fontSize: 11 }} />
+                                    <span style={{ fontSize: 11, color: 'rgba(192,80,60,0.80)', letterSpacing: '0.08em', textTransform: 'uppercase', WebkitTextFillColor: 'rgba(192,80,60,0.80)' }}>
+                                        {achievementJar.filter(a => a.fromChallenge).length} Conquered
+                                    </span>
+                                </div>
+                            )}
+                        </div>
                     </div>
+
+                    {/* Right: Add button */}
+                    <motion.button
+                        whileHover={{ scale: 1.04 }}
+                        whileTap={{ scale: 0.96 }}
+                        onClick={() => { setEditingAchievement(null); setShowAddModal(true); }}
+                        style={{
+                            background: 'linear-gradient(135deg, #8b1a1a, #c0242a)',
+                            border: '1px solid rgba(192,36,42,0.55)',
+                            borderRadius: 10,
+                            padding: '12px 22px',
+                            color: '#fff', WebkitTextFillColor: '#fff',
+                            fontFamily: "'Teko', sans-serif",
+                            fontSize: '1.2rem', fontWeight: 700,
+                            letterSpacing: '0.10em', textTransform: 'uppercase',
+                            display: 'flex', alignItems: 'center', gap: 8,
+                            boxShadow: '0 4px 24px rgba(192,36,42,0.40)',
+                            cursor: 'pointer',
+                            flexShrink: 0,
+                        }}
+                    >
+                        <FontAwesomeIcon icon={faPlus} style={{ fontSize: 14 }} />
+                        Forge Achievement
+                    </motion.button>
                 </div>
             </motion.div>
 
@@ -219,30 +318,57 @@ export default function AchievementJar() {
 
             {/* Empty State */}
             {filteredAchievements.length === 0 && (
+            <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.2 }}
+                style={{
+                    background: 'linear-gradient(160deg, rgba(14,6,6,0.95), rgba(8,4,4,0.98))',
+                    border: '1px solid rgba(192,36,42,0.22)',
+                    borderRadius: 14, padding: '64px 32px',
+                    textAlign: 'center',
+                }}
+            >
                 <motion.div
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: 0.2 }}
-                    className="glass-panel p-12 text-center"
+                    animate={{ scale: [1, 1.06, 1] }}
+                    transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+                    style={{
+                        width: 96, height: 96, borderRadius: '50%',
+                        background: 'linear-gradient(145deg, #4a3010, #9a7030)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        margin: '0 auto 24px',
+                        boxShadow: '0 0 40px rgba(200,148,58,0.35), 0 8px 32px rgba(0,0,0,0.8)',
+                    }}
                 >
-                    <div className="w-24 h-24 rounded-full bg-fire-orange/20 flex items-center justify-center mx-auto mb-6">
-                        <FontAwesomeIcon icon={faTrophy} className="text-5xl text-fire-orange" />
-                    </div>
-                    <h3 className="text-2xl font-bold mb-2">Start Your Achievement Journey</h3>
-                    <p className="text-gray-400 mb-6 max-w-md mx-auto">
-                        Add your first achievement to your jar. Every victory counts, no matter how small.
-                    </p>
-                    <button
-                        onClick={() => {
-                            setEditingAchievement(null);
-                            setShowAddModal(true);
-                        }}
-                        className="bg-gradient-to-r from-fire-orange to-fire-red text-white px-8 py-3 rounded-xl font-semibold hover:shadow-[0_0_30px_rgba(255,94,0,0.5)] transition-all inline-flex items-center gap-2"
-                    >
-                        <FontAwesomeIcon icon={faPlus} />
-                        Add Your First Achievement
-                    </button>
+                    <FontAwesomeIcon icon={faTrophy} style={{ fontSize: 42, color: '#c8943a', filter: 'drop-shadow(0 0 10px rgba(200,148,58,0.7))' }} />
                 </motion.div>
+                <h3 style={{ fontFamily: "'Teko', sans-serif", fontSize: '2rem', color: '#c0242a', WebkitTextFillColor: '#c0242a', letterSpacing: '0.06em', marginBottom: 8 }}>
+                    THE VAULT IS EMPTY
+                </h3>
+                <p style={{ color: 'rgba(160,120,100,0.65)', fontSize: 13, letterSpacing: '0.04em', marginBottom: 28, maxWidth: 360, margin: '0 auto 28px' }}>
+                    No victories yet. Every legend starts with a single act of courage.
+                </p>
+                <motion.button
+                    whileHover={{ scale: 1.04 }}
+                    whileTap={{ scale: 0.96 }}
+                    onClick={() => { setEditingAchievement(null); setShowAddModal(true); }}
+                    style={{
+                        background: 'linear-gradient(135deg, #8b1a1a, #c0242a)',
+                        border: '1px solid rgba(192,36,42,0.5)',
+                        borderRadius: 10, padding: '13px 28px',
+                        color: '#fff', WebkitTextFillColor: '#fff',
+                        fontFamily: "'Teko', sans-serif",
+                        fontSize: '1.2rem', fontWeight: 700,
+                        letterSpacing: '0.12em', textTransform: 'uppercase',
+                        display: 'inline-flex', alignItems: 'center', gap: 8,
+                        boxShadow: '0 4px 24px rgba(192,36,42,0.4)',
+                        cursor: 'pointer',
+                    }}
+                >
+                    <FontAwesomeIcon icon={faPlus} />
+                    Forge Your First Victory
+                </motion.button>
+            </motion.div>
             )}
 
             {/* Achievements Display */}
