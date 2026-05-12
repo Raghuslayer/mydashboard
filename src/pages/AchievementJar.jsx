@@ -24,28 +24,18 @@ const achievementColors = [
     'from-slate-500 to-slate-700',
 ];
 
-// Dark metallic medal themes: [outerRing, innerFace, iconColor, glowColor]
+// Each theme: o=outerRing, i=innerFace, ic=iconColor, gr=glow rgb (for box-shadow use)
 const MEDAL_THEMES = [
-    { o:'linear-gradient(145deg,#4a3010 0%,#9a7030 40%,#5c3c14 100%)', i:'linear-gradient(145deg,#1f1208,#2d1c0c)', ic:'#c8943a', g:'rgba(150,110,30,0.3)'  }, // bronze
-    { o:'linear-gradient(145deg,#2a3540 0%,#526880 40%,#2a3540 100%)', i:'linear-gradient(145deg,#0a1018,#141e28)', ic:'#6090b0', g:'rgba(60,100,150,0.25)' }, // steel
-    { o:'linear-gradient(145deg,#4a1010 0%,#801a1a 40%,#4a1010 100%)', i:'linear-gradient(145deg,#120404,#1e0808)', ic:'#a03030', g:'rgba(130,20,20,0.28)'  }, // crimson
-    { o:'linear-gradient(145deg,#2a2a10 0%,#4a4a1e 40%,#2a2a10 100%)', i:'linear-gradient(145deg,#0a0a04,#161608)', ic:'#787830', g:'rgba(90,90,20,0.25)'   }, // olive
-    { o:'linear-gradient(145deg,#1c1c2a 0%,#303048 40%,#1c1c2a 100%)', i:'linear-gradient(145deg,#060608,#0c0c14)', ic:'#5050a0', g:'rgba(60,60,130,0.25)'  }, // obsidian
-    { o:'linear-gradient(145deg,#252525 0%,#484848 40%,#252525 100%)', i:'linear-gradient(145deg,#080808,#121212)', ic:'#606060', g:'rgba(60,60,60,0.22)'   }, // gunmetal
-    { o:'linear-gradient(145deg,#3d200a 0%,#7a4014 40%,#3d200a 100%)', i:'linear-gradient(145deg,#100806,#1e1008)', ic:'#a05828', g:'rgba(120,70,20,0.28)'  }, // copper
-    { o:'linear-gradient(145deg,#0a1e10 0%,#183c20 40%,#0a1e10 100%)', i:'linear-gradient(145deg,#040a06,#0c180e)', ic:'#306040', g:'rgba(30,80,40,0.25)'   }, // forest
+    { o:'linear-gradient(145deg,#4a3010 0%,#9a7030 40%,#5c3c14 100%)', i:'linear-gradient(145deg,#1f1208,#2d1c0c)', ic:'#c8943a', gr:'200,148,58'  }, // 0 bronze
+    { o:'linear-gradient(145deg,#2a3540 0%,#526880 40%,#2a3540 100%)', i:'linear-gradient(145deg,#0a1018,#141e28)', ic:'#6090b0', gr:'60,140,190'  }, // 1 steel
+    { o:'linear-gradient(145deg,#4a1010 0%,#801a1a 40%,#4a1010 100%)', i:'linear-gradient(145deg,#120404,#1e0808)', ic:'#a03030', gr:'160,40,40'    }, // 2 crimson
+    { o:'linear-gradient(145deg,#2a2a10 0%,#4a4a1e 40%,#2a2a10 100%)', i:'linear-gradient(145deg,#0a0a04,#161608)', ic:'#787830', gr:'120,120,40'   }, // 3 olive
+    { o:'linear-gradient(145deg,#1c1c2a 0%,#303048 40%,#1c1c2a 100%)', i:'linear-gradient(145deg,#060608,#0c0c14)', ic:'#5050a0', gr:'80,80,180'    }, // 4 obsidian
+    { o:'linear-gradient(145deg,#252525 0%,#484848 40%,#252525 100%)', i:'linear-gradient(145deg,#080808,#121212)', ic:'#606060', gr:'80,80,80'     }, // 5 gunmetal
+    { o:'linear-gradient(145deg,#3d200a 0%,#7a4014 40%,#3d200a 100%)', i:'linear-gradient(145deg,#100806,#1e1008)', ic:'#a05828', gr:'160,90,40'   }, // 6 copper
+    { o:'linear-gradient(145deg,#0a1e10 0%,#183c20 40%,#0a1e10 100%)', i:'linear-gradient(145deg,#040a06,#0c180e)', ic:'#306040', gr:'40,110,60'    }, // 7 forest
 ];
-const CHALLENGE_THEME = { o:'linear-gradient(145deg,#6a5010 0%,#c8a020 40%,#6a5010 100%)', i:'linear-gradient(145deg,#181204,#2a2008)', ic:'#e8c040', g:'rgba(180,150,20,0.38)' };
-const achievementGlows = [
-    'rgba(180,30,30,0.22)',
-    'rgba(60,90,160,0.22)',
-    'rgba(20,130,80,0.22)',
-    'rgba(160,110,20,0.22)',
-    'rgba(100,50,180,0.22)',
-    'rgba(10,160,180,0.22)',
-    'rgba(180,70,10,0.22)',
-    'rgba(80,90,100,0.22)',
-];
+const CHALLENGE_THEME = { o:'linear-gradient(145deg,#6a5010 0%,#c8a020 40%,#6a5010 100%)', i:'linear-gradient(145deg,#181204,#2a2008)', ic:'#e8c040', gr:'200,168,30' };
 
 // Warrior badge shapes — angular, military, forged feel
 const BADGE_SHAPES = [
@@ -262,7 +252,7 @@ export default function AchievementJar() {
                         }}
                     >
                         <FontAwesomeIcon icon={faPlus} style={{ fontSize: 14 }} />
-                        Forge Achievement
+                        Add Achievement
                     </motion.button>
                 </div>
             </motion.div>
@@ -482,9 +472,9 @@ function FloatingBadge({ achievement, index, dimRef, onClick }) {
     const initialized = useRef(false);
     const [hovered, setHovered] = useState(false);
 
-    const x      = useMotionValue(-999);
-    const y      = useMotionValue(-999);
-    const rotate = useMotionValue(0);
+    const x = useMotionValue(-999);
+    const y = useMotionValue(-999);
+    // No rotation — badges drift/float, never spin
 
     // Register in shared physics world
     useEffect(() => {
@@ -586,12 +576,7 @@ function FloatingBadge({ achievement, index, dimRef, onClick }) {
         if (ny < -EXIT)       ny = H + EXIT * 0.08;
         else if (ny > H + EXIT) ny = -EXIT * 0.08;
 
-        // ── Pendulum wobble: heavy medal feel, not cartoon spin ────────────────
-        rotate.set(
-            Math.sin(_t * 0.00018 + phaseOffset) * 8 +
-            Math.sin(_t * 0.00031 + phaseOffset * 1.7) * 3
-        );
-
+        // No rotation — just drift
         state.x = nx; state.y = ny;
         x.set(nx); y.set(ny);
     });
@@ -600,10 +585,10 @@ function FloatingBadge({ achievement, index, dimRef, onClick }) {
         <motion.div
             style={{
                 position: 'absolute', width: BADGE_SIZE, height: BADGE_SIZE,
-                x, y, rotate,
+                x, y,
                 zIndex: hovered ? 40 : 10,
                 cursor: 'pointer',
-                willChange: 'transform',   // GPU compositor layer — eliminates jitter
+                willChange: 'transform',
             }}
             initial={{ scale: 0, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
@@ -613,17 +598,28 @@ function FloatingBadge({ achievement, index, dimRef, onClick }) {
             onHoverEnd={() => setHovered(false)}
             onClick={onClick}
         >
-            {/* Under-glow — box-shadow based (GPU composited, no filter blur repaints) */}
+            {/* Under-glow — valid rgba box-shadow using pre-extracted rgb string */}
             <div style={{
-                position: 'absolute', inset: -8, borderRadius: '50%',
+                position: 'absolute', inset: -10, borderRadius: '50%',
                 boxShadow: isChallenge
-                    ? `0 0 28px 10px rgba(200,148,20,${hovered ? 0.55 : 0.35})`
+                    ? `0 0 32px 12px rgba(${CHALLENGE_THEME.gr},${hovered ? 0.60 : 0.38})`
                     : isPriority
-                    ? `0 0 24px 8px ${theme.g.replace(')', `, ${hovered ? 0.55 : 0.40})`).replace('rgba(', 'rgba(')}`
-                    : `0 0 18px 5px ${theme.g.replace(')', `, ${hovered ? 0.45 : 0.18})`).replace('rgba(', 'rgba(')}`,
-                transition: 'box-shadow 0.5s ease',
+                    ? `0 0 28px 10px rgba(${theme.gr},${hovered ? 0.65 : 0.48})`
+                    : `0 0 18px 5px rgba(${theme.gr},${hovered ? 0.45 : 0.18})`,
+                transition: 'box-shadow 0.45s ease',
                 pointerEvents: 'none',
             }} />
+
+            {/* Priority outer gold ring — visually distinct from non-priority */}
+            {isPriority && !isChallenge && (
+                <div style={{
+                    position: 'absolute', inset: -3, borderRadius: '50%',
+                    border: `2px solid rgba(200,148,58,${hovered ? 0.85 : 0.55})`,
+                    boxShadow: `0 0 10px rgba(200,148,58,${hovered ? 0.5 : 0.25})`,
+                    transition: 'all 0.45s ease',
+                    pointerEvents: 'none',
+                }} />
+            )}
 
             {/* Outer medal ring — metallic gradient */}
             <div style={{
@@ -655,15 +651,15 @@ function FloatingBadge({ achievement, index, dimRef, onClick }) {
                 <div style={{ position:'absolute', inset:15, borderRadius:'50%', border:'1px solid rgba(200,160,20,0.2)' }} />
             )}
 
-            {/* Icon */}
+            {/* Icon — uses theme icon color properly */}
             <div style={{ position:'absolute', inset:0, display:'flex', alignItems:'center', justifyContent:'center' }}>
                 <FontAwesomeIcon
                     icon={icon}
                     style={{
                         fontSize: isChallenge ? 26 : 22,
                         color: theme.ic,
-                        opacity: 0.88,
-                        filter: `drop-shadow(0 2px 5px rgba(0,0,0,0.95)) drop-shadow(0 0 ${hovered ? 10 : 4}px ${theme.g})`,
+                        opacity: 0.92,
+                        filter: `drop-shadow(0 2px 5px rgba(0,0,0,0.95)) drop-shadow(0 0 ${hovered ? 10 : 4}px rgba(${theme.gr},0.8))`,
                         transition: 'filter 0.5s ease',
                     }}
                 />
