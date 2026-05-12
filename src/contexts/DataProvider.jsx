@@ -356,6 +356,14 @@ export function DataProvider({ children }) {
                     setAchievementJar([]);
                 }
 
+                // 13. Challenges — load from Firebase (was missing, causing local-only storage)
+                const challengesSnap = await getDoc(doc(db, `artifacts/${appId}/users/${uid}/user_data`, 'challenges'));
+                if (challengesSnap.exists()) {
+                    setChallenges(challengesSnap.data().challenges || []);
+                } else {
+                    setChallenges([]);
+                }
+
             } catch (err) {
                 console.error("Failed to load data", err);
             } finally {
