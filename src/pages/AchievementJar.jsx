@@ -331,6 +331,7 @@ function FloatingAchievements({ achievements, onAchievementClick }) {
 function FloatingBadge({ achievement, index, containerRef, onClick }) {
     const id          = achievement.id;
     const isChallenge = !!achievement.fromChallenge;
+    const isPriority  = !!achievement.isPriority;
     const icon        = isChallenge ? faCrown : achievementIcons[achievement.iconIndex || 0];
     const theme       = isChallenge ? CHALLENGE_THEME : MEDAL_THEMES[(achievement.colorIndex || 0) % MEDAL_THEMES.length];
     const phaseOffset = useMemo(() => index * 2.399, [index]); // golden ratio, unique per badge
@@ -467,12 +468,16 @@ function FloatingBadge({ achievement, index, containerRef, onClick }) {
             onHoverEnd={() => setHovered(false)}
             onClick={onClick}
         >
-            {/* Under-glow — very dim, matches metal color */}
+            {/* Under-glow — scaled by priority tier */}
             <div style={{
                 position:'absolute', inset:-12, borderRadius:'50%',
-                background: theme.g,
+                background: isChallenge
+                    ? 'rgba(200,148,20,0.50)'
+                    : isPriority
+                    ? theme.g.replace('0.3)', '0.50)').replace('0.25)', '0.50)').replace('0.28)', '0.50)').replace('0.22)', '0.50)').replace('0.38)', '0.55)')
+                    : theme.g,
                 filter:'blur(22px)',
-                opacity: hovered ? 0.65 : 0.22,
+                opacity: hovered ? 0.85 : (isChallenge ? 0.50 : isPriority ? 0.40 : 0.20),
                 transition:'opacity 0.6s ease',
                 pointerEvents:'none',
             }} />
@@ -616,6 +621,7 @@ function AchievementFormModal({ isOpen, onClose, onSave, initialData }) {
         description: '',
         iconIndex: 0,
         colorIndex: 0,
+        isPriority: false,
     });
 
     React.useEffect(() => {
@@ -625,6 +631,7 @@ function AchievementFormModal({ isOpen, onClose, onSave, initialData }) {
                 description: initialData.description || '',
                 iconIndex: initialData.iconIndex || 0,
                 colorIndex: initialData.colorIndex || 0,
+                isPriority: initialData.isPriority || false,
             });
         } else {
             setFormData({
@@ -632,6 +639,7 @@ function AchievementFormModal({ isOpen, onClose, onSave, initialData }) {
                 description: '',
                 iconIndex: 0,
                 colorIndex: 0,
+                isPriority: false,
             });
         }
     }, [initialData, isOpen]);
@@ -645,7 +653,7 @@ function AchievementFormModal({ isOpen, onClose, onSave, initialData }) {
             date: initialData?.date || Date.now(),
         });
 
-        setFormData({ title: '', description: '', iconIndex: 0, colorIndex: 0 });
+        setFormData({ title: '', description: '', iconIndex: 0, colorIndex: 0, isPriority: false });
     };
 
     return (
@@ -674,6 +682,48 @@ function AchievementFormModal({ isOpen, onClose, onSave, initialData }) {
                         rows={4}
                         className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-fire-orange transition-colors resize-none"
                     />
+                </div>
+
+                {/* PRIORITY TOGGLE */}
+                <div
+                    onClick={() => setFormData({ ...formData, isPriority: !formData.isPriority })}
+                    style={{
+                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                        cursor: 'pointer', userSelect: 'none',
+                        background: formData.isPriority ? 'rgba(192,36,42,0.15)' : 'rgba(255,255,255,0.04)',
+                        border: `1px solid ${formData.isPriority ? 'rgba(192,36,42,0.50)' : 'rgba(255,255,255,0.10)'}`,
+                        borderRadius: '12px', padding: '14px 16px',
+                        transition: 'all 0.25s ease',
+                        boxShadow: formData.isPriority ? '0 0 20px rgba(192,36,42,0.25)' : 'none',
+                    }}
+                >
+                    <div>
+                        <p style={{ fontWeight: 700, fontSize: '14px', color: formData.isPriority ? '#e08060' : '#aaa', marginBottom: 2 }}>
+                            ⚔️ Mark as Priority Achievement
+                        </p>
+                        <p style={{ fontSize: '11px', color: formData.isPriority ? 'rgba(200,148,58,0.80)' : 'rgba(120,120,120,0.7)' }}>
+                            Priority achievements glow brighter in the Vault
+                        </p>
+                    </div>
+                    <div style={{
+                        width: 44, height: 24, borderRadius: 12,
+                        background: formData.isPriority
+                            ? 'linear-gradient(90deg, #8b1a1a, #c0242a)'
+                            : 'rgba(60,40,40,0.8)',
+                        border: `1px solid ${formData.isPriority ? 'rgba(192,36,42,0.6)' : 'rgba(80,60,60,0.5)'}`,
+                        position: 'relative', transition: 'all 0.25s ease',
+                        flexShrink: 0,
+                        boxShadow: formData.isPriority ? '0 0 12px rgba(192,36,42,0.5)' : 'none',
+                    }}>
+                        <div style={{
+                            position: 'absolute', top: 2,
+                            left: formData.isPriority ? 22 : 2,
+                            width: 18, height: 18, borderRadius: '50%',
+                            background: formData.isPriority ? '#fff' : 'rgba(140,100,100,0.8)',
+                            transition: 'all 0.25s cubic-bezier(0.34,1.56,0.64,1)',
+                            boxShadow: '0 1px 4px rgba(0,0,0,0.5)',
+                        }} />
+                    </div>
                 </div>
 
                 {/* Icon Selection */}
