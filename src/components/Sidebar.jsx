@@ -14,6 +14,7 @@ import {
 import { faYoutube } from '@fortawesome/free-brands-svg-icons';
 import { motion, AnimatePresence } from 'framer-motion';
 import SettingsModal from './SettingsModal';
+import { getTierForLevel } from '../utils/tierSystem';
 
 // Icon mapping
 const iconMap = {
@@ -178,7 +179,15 @@ function SidebarContent({ onLogout, onClose, isMobile, level, showSettings, setS
                     <h1 className="header-font text-2xl md:text-3xl text-transparent bg-clip-text bg-gradient-to-r from-fire-yellow to-fire-red leading-tight">
                         IRON<br />DISCIPLINE
                     </h1>
-                    <p className="text-[10px] text-gray-500 uppercase tracking-widest mt-1">Level {level} • Warrior Mode</p>
+                    <div className="flex items-center gap-2 mt-1">
+                        <span 
+                            className="text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 rounded" 
+                            style={{ backgroundColor: getTierForLevel(level).color + '20', color: getTierForLevel(level).color }}
+                        >
+                            {getTierForLevel(level).name}
+                        </span>
+                        <p className="text-[10px] text-gray-500 uppercase tracking-widest">Lv.{level}</p>
+                    </div>
                 </div>
                 {isMobile && (
                     <button onClick={onClose} className="text-gray-400 hover:text-white">

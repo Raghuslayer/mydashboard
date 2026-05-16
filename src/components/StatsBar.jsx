@@ -3,6 +3,7 @@ import { useData } from '../contexts/DataProvider';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faArrowsRotate } from '@fortawesome/free-solid-svg-icons';
 import { staticData, routineTabs } from '../data/staticData';
+import { getTierForLevel } from '../utils/tierSystem';
 
 export default function StatsBar() {
     const { userData, checkedStates, dailyTasks, getRoutineTasks, editableRoutineTabs, achievementJar } = useData();
@@ -94,7 +95,12 @@ export default function StatsBar() {
                             style={{ width: `${xpPercent}%` }}
                         />
                     </div>
-                    <p className="text-[10px] text-gray-500 mt-1">Level {level}</p>
+                    <div className="flex justify-between items-center mt-1">
+                        <p className="text-[10px] text-gray-500">Lv.{level}</p>
+                        <p className="text-[10px] font-bold tracking-wider" style={{ color: getTierForLevel(level).color }}>
+                            {getTierForLevel(level).name}
+                        </p>
+                    </div>
                 </div>
 
                 {/* Daily Progress Bar */}
