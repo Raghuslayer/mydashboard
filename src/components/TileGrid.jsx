@@ -9,6 +9,7 @@ import {
     closestCenter,
     KeyboardSensor,
     PointerSensor,
+    TouchSensor,
     useSensor,
     useSensors,
 } from '@dnd-kit/core';
@@ -63,6 +64,7 @@ export default function TileGrid({
 
     const sensors = useSensors(
         useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+        useSensor(TouchSensor, { activationConstraint: { delay: 250, tolerance: 5 } }),
         useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
     );
 
@@ -195,8 +197,8 @@ export default function TileGrid({
                                             {/* ── Edit/drag controls (hover) ── */}
                                             {isEditable && (
                                                 <div
-                                                    style={{ position:'absolute', top:10, left:12, zIndex:20, display:'flex', gap:5, opacity:0, transition:'opacity 0.18s' }}
-                                                    className="group-hover:!opacity-100"
+                                                    style={{ position:'absolute', top:10, left:12, zIndex:20, display:'flex', gap:5, transition:'opacity 0.18s' }}
+                                                    className="opacity-100 md:opacity-0 md:group-hover:!opacity-100"
                                                 >
                                                     {dragHandleProps && (
                                                         <div

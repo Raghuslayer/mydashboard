@@ -77,9 +77,10 @@ export function DataProvider({ children }) {
         await setDoc(doc(db, `artifacts/${getAppId()}/users/${uid}/user_data`, 'journal'), { entries }, { merge: true });
     }, 1000), []);
 
-    const saveMatrix = useCallback(debounce(async (uid, tasks) => {
+    const saveMatrix = useCallback(async (uid, tasks) => {
         await setDoc(doc(db, `artifacts/${getAppId()}/users/${uid}/user_data`, 'matrix_tasks'), { tasks }, { merge: true });
-    }, 1000), []);
+    }, []);
+
 
     const saveGoal = useCallback(debounce(async (uid, goal) => {
         await setDoc(doc(db, `artifacts/${getAppId()}/users/${uid}/user_data`, 'main_goal'), { goal }, { merge: true });
