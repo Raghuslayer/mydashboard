@@ -116,7 +116,7 @@ export default function Sidebar({ isOpen, onClose }) {
     return (
         <>
             {/* Desktop Sidebar (Always visible md+) */}
-            <aside className="fixed inset-y-0 left-0 w-64 bg-black/90 backdrop-blur-xl border-r border-white/10 hidden md:flex flex-col z-20">
+            <aside className="fixed inset-y-0 left-0 w-64 bg-black/90 backdrop-blur-md border-r border-white/10 hidden md:flex flex-col z-20">
                 <SidebarContent onLogout={handleLogout} level={userData?.level || 1} showSettings={showSettings} setShowSettings={setShowSettings} />
             </aside>
 
@@ -132,7 +132,7 @@ export default function Sidebar({ isOpen, onClose }) {
                             onClick={onClose}
                         />
                         <motion.aside
-                            className="fixed inset-y-0 left-0 w-72 bg-black/90 backdrop-blur-xl border-r border-white/10 flex flex-col z-50 md:hidden"
+                            className="fixed inset-y-0 left-0 w-72 bg-black/90 backdrop-blur-md border-r border-white/10 flex flex-col z-50 md:hidden"
                             initial="closed"
                             animate="open"
                             exit="closed"

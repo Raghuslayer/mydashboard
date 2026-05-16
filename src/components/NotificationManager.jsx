@@ -14,7 +14,7 @@ import { staticData, routineTabs } from '../data/staticData';
 
 export default function NotificationManager() {
     const { checkedStates, dailyTasks, customRoutineTasks, editableRoutineTabs } = useData();
-    const [permission, setPermission] = useState(getNotificationPermission());
+    const [permission, setPermission] = useState('default');
     const [showBanner, setShowBanner] = useState(false);
     const [lastMessage, setLastMessage] = useState('');
     const [testing, setTesting] = useState(false);
@@ -60,6 +60,11 @@ export default function NotificationManager() {
         return { completed, total, taskNames: taskNames.slice(0, 5) };
     }, [checkedStates, dailyTasks, customRoutineTasks, editableRoutineTabs]);
 
+    // Fetch initial permission
+    useEffect(() => {
+        getNotificationPermission().then(setPermission);
+    }, []);
+
     // Start scheduler when permission is granted
     useEffect(() => {
         if (permission === 'granted') {
@@ -83,7 +88,8 @@ export default function NotificationManager() {
 
     const handleEnable = async () => {
         const granted = await requestNotificationPermission();
-        setPermission(getNotificationPermission());
+        const newPerm = await getNotificationPermission();
+        setPermission(newPerm);
         setShowBanner(false);
         if (granted) {
             localStorage.setItem('notif_banner_dismissed', '1');
@@ -99,7 +105,8 @@ export default function NotificationManager() {
         setTesting(true);
         const stats = getTaskStats();
         const msg = await sendTestNotification(stats.completed, stats.total, stats.taskNames);
-        setPermission(getNotificationPermission());
+        const newPerm = await getNotificationPermission();
+        setPermission(newPerm);
         if (msg && typeof msg === 'string') setLastMessage(msg);
         setTesting(false);
     };

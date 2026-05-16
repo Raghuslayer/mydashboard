@@ -1,4 +1,6 @@
 import { getGogginsPushMessage } from './gemini';
+import { Capacitor } from '@capacitor/core';
+import { LocalNotifications } from '@capacitor/local-notifications';
 
 // ─── Time of Day Helper ─────────────────────────────────────────────────────
 export function getTimeOfDay() {
@@ -25,42 +27,75 @@ const NOTIFICATION_SCHEDULE = [
 
 // ─── Permission ─────────────────────────────────────────────────────────────
 export async function requestNotificationPermission() {
-    if (!('Notification' in window)) {
-        console.warn('Browser does not support notifications');
-        return false;
-    }
-    if (Notification.permission === 'granted') return true;
-    if (Notification.permission === 'denied') return false;
+    if (Capacitor.isNativePlatform()) {
+        const perm = await LocalNotifications.requestPermissions();
+        return perm.display === 'granted';
+    } else {
+        if (!('Notification' in window)) {
+            console.warn('Browser does not support notifications');
+            return false;
+        }
+        if (Notification.permission === 'granted') return true;
+        if (Notification.permission === 'denied') return false;
 
-    const result = await Notification.requestPermission();
-    return result === 'granted';
+        const result = await Notification.requestPermission();
+        return result === 'granted';
+    }
 }
 
-export function getNotificationPermission() {
-    if (!('Notification' in window)) return 'unsupported';
-    return Notification.permission;
+export async function getNotificationPermission() {
+    if (Capacitor.isNativePlatform()) {
+        const perm = await LocalNotifications.checkPermissions();
+        // Capacitor returns 'prompt', 'prompt-with-rationale', 'granted', or 'denied'
+        if (perm.display === 'granted') return 'granted';
+        if (perm.display === 'denied') return 'denied';
+        return 'default'; // mapping prompt to default
+    } else {
+        if (!('Notification' in window)) return 'unsupported';
+        return Notification.permission;
+    }
 }
 
 // ─── Fire a notification ─────────────────────────────────────────────────────
 async function fireNotification(message, title = "⚡ WARRIOR DASHBOARD") {
-    if (!('Notification' in window) || Notification.permission !== 'granted') return;
+    if (Capacitor.isNativePlatform()) {
+        const perm = await LocalNotifications.checkPermissions();
+        if (perm.display !== 'granted') return;
 
-    const notif = new Notification(title, {
-        body: message,
-        icon: '/favicon.ico',
-        badge: '/favicon.ico',
-        tag: 'warrior-dashboard-push', // Replace previous notifications
-        requireInteraction: false,
-        silent: false,
-    });
+        await LocalNotifications.schedule({
+            notifications: [
+                {
+                    id: new Date().getTime() % 100000,
+                    title: title,
+                    body: message,
+                    schedule: { at: new Date(Date.now() + 1000) }, // Fire almost immediately
+                    sound: null,
+                    attachments: null,
+                    actionTypeId: "",
+                    extra: null
+                }
+            ]
+        });
+    } else {
+        if (!('Notification' in window) || Notification.permission !== 'granted') return;
 
-    // Auto-close after 8 seconds
-    setTimeout(() => notif.close(), 8000);
+        const notif = new Notification(title, {
+            body: message,
+            icon: '/favicon.ico',
+            badge: '/favicon.ico',
+            tag: 'warrior-dashboard-push', // Replace previous notifications
+            requireInteraction: false,
+            silent: false,
+        });
 
-    notif.onclick = () => {
-        window.focus();
-        notif.close();
-    };
+        // Auto-close after 8 seconds
+        setTimeout(() => notif.close(), 8000);
+
+        notif.onclick = () => {
+            window.focus();
+            notif.close();
+        };
+    }
 }
 
 // ─── Build and send a dynamic notification ───────────────────────────────────

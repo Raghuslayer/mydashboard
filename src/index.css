@@ -123,24 +123,19 @@
   /* POWERFUL TEXT - Military Grade */
   .fire-text {
     @apply text-transparent bg-clip-text bg-gradient-to-r from-[var(--gradient-from)] via-[var(--gradient-via)] to-[var(--gradient-to)];
-    text-shadow: 
-      0 0 20px var(--color-glow),
-      0 2px 8px rgba(0, 0, 0, 0.8);
-    filter: drop-shadow(0 4px 12px var(--color-glow));
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
     font-weight: 900;
   }
 
   /* IRON GLASS PANEL — dark forge plate */
   .glass-panel {
-    @apply bg-[rgba(10,6,6,0.92)] backdrop-blur-xl border border-[var(--color-border)] shadow-2xl relative;
+    @apply bg-[rgba(10,6,6,0.92)] backdrop-blur-md border border-[var(--color-border)] relative;
     border-radius: 12px;
     box-shadow:
-      0 12px 48px rgba(0, 0, 0, 0.85),
-      0 0 0 1px rgba(255, 255, 255, 0.025) inset,
-      0 1px 0 rgba(255, 255, 255, 0.06) inset,
-      0 24px 80px rgba(140, 20, 24, 0.08);
-    transform: translateZ(20px);
+      0 8px 30px rgba(0, 0, 0, 0.6),
+      0 1px 0 rgba(255, 255, 255, 0.05) inset;
     transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+    will-change: transform, box-shadow;
   }
   
   .glass-panel:hover {

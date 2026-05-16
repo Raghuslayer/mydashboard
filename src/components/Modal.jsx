@@ -28,7 +28,7 @@ export default function Modal({ isOpen, onClose, title, children }) {
                 >
                     {/* Backdrop */}
                     <motion.div
-                        className="absolute inset-0 bg-black/90 backdrop-blur-xl"
+                        className="absolute inset-0 bg-black/90 backdrop-blur-md"
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
