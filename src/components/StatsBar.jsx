@@ -7,12 +7,15 @@ import { staticData, routineTabs } from '../data/staticData';
 export default function StatsBar() {
     const { userData, checkedStates, dailyTasks, getRoutineTasks, editableRoutineTabs, achievementJar } = useData();
 
-    // Calculate XP progress with safety checks
-    const level = userData?.level || 1;
+    // Calculate XP progress with quadratic scaling (PUBG-style)
     const xp = userData?.xp || 0;
-    const currentLevelXp = (level - 1) * 100;
-    const xpInLevel = Math.max(0, xp - currentLevelXp);
-    const xpPercent = Math.min(100, Math.max(0, xpInLevel));
+    // Formula: XP = 50 * (L^2 - L) => L = floor((1 + sqrt(1 + 0.08 * xp)) / 2)
+    const level = Math.max(1, Math.floor((1 + Math.sqrt(1 + 0.08 * xp)) / 2));
+    const currentLevelBaseXp = 50 * (level * level - level);
+    const nextLevelBaseXp = 50 * ((level + 1) * (level + 1) - (level + 1));
+    const xpInLevel = Math.max(0, xp - currentLevelBaseXp);
+    const xpRequiredForNextLevel = nextLevelBaseXp - currentLevelBaseXp;
+    const xpPercent = Math.min(100, Math.max(0, (xpInLevel / xpRequiredForNextLevel) * 100));
 
     // Calculate daily progress with safety checks
     const calculateProgress = () => {
@@ -83,7 +86,7 @@ export default function StatsBar() {
                 <div className="w-40">
                     <div className="flex justify-between text-[10px] text-gray-400 mb-1 uppercase tracking-wider">
                         <span>XP Progress</span>
-                        <span>{xpInLevel} / 100</span>
+                        <span>{xpInLevel} / {xpRequiredForNextLevel}</span>
                     </div>
                     <div className="h-1.5 w-full bg-gray-800 rounded-full overflow-hidden">
                         <div

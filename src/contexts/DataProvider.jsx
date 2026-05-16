@@ -245,6 +245,11 @@ export function DataProvider({ children }) {
                 const goalSnap = await getDoc(doc(db, `artifacts/${appId}/users/${uid}/user_data`, 'main_goal'));
                 const goal = goalSnap.exists() ? goalSnap.data().goal : 'UNLEASH YOUR INNER FIRE';
 
+                // Recalculate level strictly from XP based on the quadratic formula to fix old data
+                if (gData.xp !== undefined) {
+                    gData.level = Math.max(1, Math.floor((1 + Math.sqrt(1 + 0.08 * gData.xp)) / 2));
+                }
+
                 setUserData({ ...gData, goal });
 
                 // 3. Daily Progress
@@ -379,7 +384,7 @@ export function DataProvider({ children }) {
     function addXP(amount) {
         setUserData(prev => {
             const nextXP = Math.max(0, prev.xp + amount);
-            const nextLevel = Math.floor(nextXP / 100) + 1;
+            const nextLevel = Math.max(1, Math.floor((1 + Math.sqrt(1 + 0.08 * nextXP)) / 2));
             const newData = { ...prev, xp: nextXP, level: nextLevel };
             if (currentUser) saveGamification(currentUser.uid, { xp: nextXP, level: nextLevel });
             return newData;
