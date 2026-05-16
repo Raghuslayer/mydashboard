@@ -1,4 +1,4 @@
-import { getGogginsPushMessage } from './gemini';
+import { getGogginsPushMessage, generateText } from './gemini';
 import { Capacitor } from '@capacitor/core';
 import { LocalNotifications } from '@capacitor/local-notifications';
 
@@ -117,6 +117,69 @@ export async function sendDynamicNotification(tasksCompleted, tasksTotal, taskNa
     }
 }
 
+// ─── Native Scheduling ───────────────────────────────────────────────────────
+const NATIVE_BACKUP_QUOTES = [
+    "Wake up. Time to get after it. Stay Hard.",
+    "The morning is yours to take. Don't waste it.",
+    "Late morning push. What have you accomplished so far?",
+    "Post-lunch slump is for the weak. Keep pushing.",
+    "Afternoon check-in. Put in the work.",
+    "Evening. Most people are relaxing now. You aren't most people.",
+    "The day isn't over. Finish strong.",
+    "Late night accountability. Check your tasks.",
+    "Journal. Plan tomorrow's war. Sleep. Stay Hard."
+];
+
+export async function syncNativeNotifications(stats) {
+    if (!Capacitor.isNativePlatform()) return;
+    
+    try {
+        const perm = await LocalNotifications.checkPermissions();
+        if (perm.display !== 'granted') return;
+
+        const pending = await LocalNotifications.getPending();
+        if (pending.notifications && pending.notifications.length > 0) {
+            await LocalNotifications.cancel({ notifications: pending.notifications });
+        }
+
+        let agenticQuotes = [...NATIVE_BACKUP_QUOTES];
+        if (stats && stats.total > 0) {
+            try {
+                const tasksLeft = stats.total - stats.completed;
+                const taskStr = stats.taskNames && stats.taskNames.length > 0 ? stats.taskNames.join(', ') : 'their goals';
+                const prompt = `You are David Goggins. The user has ${tasksLeft} tasks left today. Some tasks are: ${taskStr}.
+Generate exactly ${NOTIFICATION_SCHEDULE.length} short, brutal, raw motivational push notifications (1-2 sentences each) to be sent at these specific times:
+6:00 AM, 8:30 AM, 11:00 AM, 1:00 PM, 3:30 PM, 6:00 PM, 8:30 PM, 10:00 PM, 11:30 PM.
+Make them highly agentic and context-aware. Reference the tasks they need to do. Tailor the tone to the time of day.
+Return ONLY a valid JSON array of ${NOTIFICATION_SCHEDULE.length} strings. No markdown, no explanations.`;
+                
+                const response = await generateText(prompt);
+                const jsonStr = response.replace(/```json|```/g, '').trim();
+                const parsed = JSON.parse(jsonStr);
+                if (Array.isArray(parsed) && parsed.length === NOTIFICATION_SCHEDULE.length) {
+                    agenticQuotes = parsed;
+                }
+            } catch (err) {
+                console.warn('Agentic background quotes failed, using static fallback:', err);
+            }
+        }
+
+        const notifications = NOTIFICATION_SCHEDULE.map((s, idx) => ({
+            id: s.hour * 100 + s.minute, // unique id per time slot
+            title: "⚡ WARRIOR DASHBOARD",
+            body: agenticQuotes[idx] || "Stay Hard.",
+            schedule: { 
+                on: { hour: s.hour, minute: s.minute },
+                allowWhileIdle: true 
+            }
+        }));
+
+        await LocalNotifications.schedule({ notifications });
+    } catch (e) {
+        console.error('Failed to schedule native notifications', e);
+    }
+}
+
 // ─── Scheduler ───────────────────────────────────────────────────────────────
 let _schedulerInterval = null;
 let _lastStats = null;
@@ -130,6 +193,9 @@ let _milestonesHit = new Set(); // store milestones for the current session
  */
 export function startNotificationScheduler(getTaskStats) {
     stopNotificationScheduler(); // ensure no duplicates
+
+    const initialStats = getTaskStats();
+    syncNativeNotifications(initialStats); // Schedule autonomous background native notifications
 
     // Check for long absence upon init
     const lastCheckStr = localStorage.getItem('notif_last_check');
@@ -150,12 +216,16 @@ export function startNotificationScheduler(getTaskStats) {
         const stats = getTaskStats();
 
         // 1. Time-based Static Schedule Check
-        const shouldFireTime = NOTIFICATION_SCHEDULE.some(
-            s => s.hour === hour && s.minute === minute
-        );
+        // If native, time-based is handled autonomously by Capacitor LocalNotifications
+        let fireTime = false;
         const slotKey = `${hour}:${minute}`;
-        const lastSlot = localStorage.getItem('notif_last_slot');
-        let fireTime = (shouldFireTime && lastSlot !== slotKey);
+        if (!Capacitor.isNativePlatform()) {
+            const shouldFireTime = NOTIFICATION_SCHEDULE.some(
+                s => s.hour === hour && s.minute === minute
+            );
+            const lastSlot = localStorage.getItem('notif_last_slot');
+            fireTime = (shouldFireTime && lastSlot !== slotKey);
+        }
 
         // 2. Autonomous Behavior Check
         let fireBehavior = false;
