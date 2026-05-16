@@ -1,7 +1,7 @@
 import React from 'react';
 import { useData } from '../contexts/DataProvider';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faArrowsRotate } from '@fortawesome/free-solid-svg-icons';
+import { faArrowsRotate, faCrosshairs, faCalendarDay } from '@fortawesome/free-solid-svg-icons';
 import { staticData, routineTabs } from '../data/staticData';
 import { getTierForLevel } from '../utils/tierSystem';
 
@@ -73,10 +73,21 @@ export default function StatsBar() {
 
     return (
         <div className="hidden md:flex items-center justify-between mb-8">
-            {/* Goal / Focus */}
-            <div>
-                <p className="text-xs uppercase tracking-[0.2em] text-gray-500 mb-1">Current Focus</p>
-                <h2 className="header-font text-3xl lg:text-4xl text-white leading-none">
+            {/* Goal / Focus Block */}
+            <div className="flex flex-col gap-1">
+                <div className="flex items-center gap-4 mb-1">
+                    <div className="flex items-center gap-2 text-fire-orange bg-fire-orange/10 px-3 py-1 rounded-md border border-fire-orange/20">
+                        <FontAwesomeIcon icon={faCrosshairs} className="text-xs" />
+                        <span className="text-[10px] uppercase font-bold tracking-[0.2em]">Active Objective</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-gray-500">
+                        <FontAwesomeIcon icon={faCalendarDay} className="text-xs" />
+                        <span className="text-[10px] uppercase font-bold tracking-widest">
+                            {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}
+                        </span>
+                    </div>
+                </div>
+                <h2 className="header-font text-3xl lg:text-4xl text-transparent bg-clip-text bg-gradient-to-r from-white via-gray-200 to-gray-500 leading-none filter drop-shadow-[0_2px_10px_rgba(255,255,255,0.1)]">
                     {(userData?.goal || 'UNLEASH YOUR INNER FIRE').toUpperCase()}
                 </h2>
             </div>
@@ -96,8 +107,9 @@ export default function StatsBar() {
                         />
                     </div>
                     <div className="flex justify-between items-center mt-1">
-                        <p className="text-[10px] text-gray-500">Lv.{level}</p>
-                        <p className="text-[10px] font-bold tracking-wider" style={{ color: getTierForLevel(level).color }}>
+                        <p className="text-[11px] text-gray-400 font-bold tracking-wider">Lv.{level}</p>
+                        <p className="text-[11px] font-bold tracking-wider flex items-center gap-1.5" style={{ color: getTierForLevel(level).color }}>
+                            <FontAwesomeIcon icon={getTierForLevel(level).icon} />
                             {getTierForLevel(level).name}
                         </p>
                     </div>

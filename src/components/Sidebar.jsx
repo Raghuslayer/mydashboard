@@ -174,27 +174,73 @@ function SidebarContent({ onLogout, onClose, isMobile, level, showSettings, setS
 
     return (
         <>
-            <div className="p-5 border-b border-white/5 flex justify-between items-center">
-                <div>
-                    <h1 className="header-font text-2xl md:text-3xl text-transparent bg-clip-text bg-gradient-to-r from-fire-yellow to-fire-red leading-tight">
-                        IRON<br />DISCIPLINE
-                    </h1>
-                    <div className="flex items-center gap-2 mt-1">
-                        <span 
-                            className="text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 rounded" 
-                            style={{ backgroundColor: getTierForLevel(level).color + '20', color: getTierForLevel(level).color }}
+            <div className="p-5 border-b border-white/5 relative overflow-hidden">
+                {/* Background ambient glow */}
+                <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-fire-orange/5 to-transparent pointer-events-none"></div>
+                
+                <div className="relative z-10 flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                        {/* Warrior Avatar */}
+                        <div className="relative group cursor-pointer">
+                            <div className="w-14 h-14 rounded-xl overflow-hidden border border-fire-orange/50 shadow-[0_0_15px_rgba(255,94,0,0.3)] transition-transform group-hover:scale-105">
+                                <img 
+                                    src="https://images.unsplash.com/photo-1517836357463-d25dfeac3438?q=80&w=200&auto=format&fit=crop" 
+                                    alt="Warrior Profile" 
+                                    className="w-full h-full object-cover grayscale contrast-125 group-hover:grayscale-0 transition-all duration-500"
+                                />
+                            </div>
+                            <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-black animate-pulse"></div>
+                        </div>
+
+                        {/* Title */}
+                        <div>
+                            <h1 className="header-font text-2xl md:text-3xl text-transparent bg-clip-text bg-gradient-to-r from-fire-yellow to-fire-red leading-none tracking-wider drop-shadow-md">
+                                IRON
+                            </h1>
+                            <h1 className="header-font text-2xl md:text-3xl text-white leading-none tracking-widest mt-1">
+                                DISCIPLINE
+                            </h1>
+                        </div>
+                    </div>
+                    {isMobile && (
+                        <button onClick={onClose} className="text-gray-400 hover:text-white p-2">
+                            <FontAwesomeIcon icon={faXmark} className="text-2xl" />
+                        </button>
+                    )}
+                </div>
+
+                {/* Massive Tier Badge */}
+                <div className="mt-5 bg-black/40 rounded-xl p-3 border border-white/10 flex items-center gap-4 shadow-lg relative overflow-hidden group">
+                        {/* Subtle background glow based on tier color */}
+                        <div 
+                            className="absolute inset-0 opacity-10 transition-opacity group-hover:opacity-20"
+                            style={{ background: `linear-gradient(135deg, ${getTierForLevel(level).color}, transparent)` }}
+                        />
+                        
+                        <div 
+                            className="flex items-center justify-center w-12 h-12 rounded-lg relative z-10"
+                            style={{ 
+                                color: getTierForLevel(level).color,
+                                border: `1px solid ${getTierForLevel(level).color}50`,
+                                background: `radial-gradient(circle at top left, ${getTierForLevel(level).color}20, transparent)`,
+                                boxShadow: `0 0 15px ${getTierForLevel(level).color}20 inset`
+                            }}
                         >
-                            {getTierForLevel(level).name}
-                        </span>
-                        <p className="text-[10px] text-gray-500 uppercase tracking-widest">Lv.{level}</p>
+                            <FontAwesomeIcon icon={getTierForLevel(level).icon} className="text-2xl drop-shadow-md" style={{ filter: `drop-shadow(0 0 8px ${getTierForLevel(level).color}60)` }} />
+                        </div>
+                        <div className="relative z-10">
+                            <p 
+                                className="font-black uppercase tracking-[0.25em] text-[14px]"
+                                style={{ color: getTierForLevel(level).color, textShadow: `0 0 15px ${getTierForLevel(level).color}40` }}
+                            >
+                                {getTierForLevel(level).name}
+                            </p>
+                            <p className="text-[11px] text-gray-500 uppercase tracking-widest mt-0.5">
+                                Level <span className="text-gray-200 font-bold">{level}</span>
+                            </p>
+                        </div>
                     </div>
                 </div>
-                {isMobile && (
-                    <button onClick={onClose} className="text-gray-400 hover:text-white">
-                        <FontAwesomeIcon icon={faXmark} className="text-xl" />
-                    </button>
-                )}
-            </div>
 
             <nav className="flex-1 overflow-y-auto custom-scrollbar p-3 space-y-1">
                 {/* Overview - Always visible at top */}
