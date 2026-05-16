@@ -613,7 +613,18 @@ export function DataProvider({ children }) {
         newEntries.unshift(entry); // Add to beginning
 
         setJournalEntries(newEntries);
-        await saveJournal(currentUser.uid, newEntries);
+        // Write directly (not via debounce) so async/await works correctly
+        try {
+            const appId = getAppId();
+            await setDoc(
+                doc(db, `artifacts/${appId}/users/${currentUser.uid}/user_data`, 'journal'),
+                { entries: newEntries },
+                { merge: true }
+            );
+        } catch (err) {
+            console.error('Failed to save journal entry:', err);
+            throw err;
+        }
     }
 
     // Matrix Tasks

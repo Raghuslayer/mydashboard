@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
 import StatsBar from '../components/StatsBar';
+import NotificationManager from '../components/NotificationManager';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faBars } from '@fortawesome/free-solid-svg-icons';
 import { useData } from '../contexts/DataProvider';
@@ -18,6 +19,9 @@ export default function DashboardLayout() {
     return (
         <ThemeProvider initialTheme={userProfile.theme || 'intense'} onThemeChange={handleThemeChange}>
             <div className="flex h-screen overflow-hidden w-full relative bg-gradient-to-br from-gray-900 to-black text-gray-200">
+                {/* Global Notification Manager */}
+                <NotificationManager />
+
                 {/* Sidebar (Desktop: static, Mobile: drawer) */}
                 <Sidebar isOpen={isMobileMenuOpen} onClose={() => setIsMobileMenuOpen(false)} />
 

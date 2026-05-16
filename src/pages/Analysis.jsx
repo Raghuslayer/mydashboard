@@ -441,12 +441,21 @@ export default function Analysis() {
     const handleGetAiInsights = async () => {
         setIsAiModalOpen(true);
 
-        // Use cached analysis if available (Smart API Usage)
-        if (dailyAnalysis && !dailyAnalysis.includes("Error")) {
+        // Stale/error messages that should NOT be re-used
+        const isStale = !dailyAnalysis ||
+            dailyAnalysis.includes('Error') ||
+            dailyAnalysis.includes('silent today') ||
+            dailyAnalysis.includes('Stay disciplined anyway');
+
+        // Use cached analysis if it's real AI content
+        if (!isStale) {
             return;
         }
 
         setLoadingAi(true);
+        // Clear stale cached value so context doesn't show old error
+        setDailyAnalysis(null);
+
         try {
             // Get last 7 days of history
             const recentHistory = historyData
@@ -456,7 +465,7 @@ export default function Analysis() {
             const analysis = await getHabitAnalysis(currentStats, recentHistory);
             setDailyAnalysis(analysis);
         } catch (error) {
-            setDailyAnalysis("The Oracle is silent today. (API Error: Check connection or limits)");
+            setDailyAnalysis('Analysis unavailable — keep pushing forward regardless. Discipline outlasts any technical issue.');
         } finally {
             setLoadingAi(false);
         }
