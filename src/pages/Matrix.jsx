@@ -1,201 +1,257 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useData } from '../contexts/DataProvider';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
-    faFire, faCalendarCheck, faUserClock, faTrash,
-    faPlus, faCheck, faXmark, faExclamationCircle
+    faFire, faCalendarCheck, faUserClock, faBan,
+    faPlus, faCheck, faTrash, faChevronDown, faChevronUp
 } from '@fortawesome/free-solid-svg-icons';
+import { motion, AnimatePresence } from 'framer-motion';
+import LoadingScreen from '../components/LoadingScreen';
 
-const quadrants = [
+const QUADRANTS = [
     {
         id: 'q1',
-        title: 'DO FIRST',
-        subtitle: 'Urgent & Important',
-        desc: 'Crises, deadlines, pressing problems.',
-        bgColor: 'bg-gradient-to-br from-red-900/40 to-black',
-        borderColor: 'border-red-500/50',
-        iconColor: 'text-red-500',
-        badgeColor: 'bg-red-500/20 text-red-300',
-        icon: faFire
+        title: 'DO NOW',
+        label: 'Urgent + Important',
+        action: 'Attack these immediately. No excuses.',
+        icon: faFire,
+        accentColor: '#ef4444',
+        bg: 'rgba(239,68,68,0.06)',
+        border: 'rgba(239,68,68,0.30)',
+        glow: 'rgba(239,68,68,0.15)',
     },
     {
         id: 'q2',
         title: 'SCHEDULE',
-        subtitle: 'Not Urgent & Important',
-        desc: 'Planning, prevention, relationship building.',
-        bgColor: 'bg-gradient-to-br from-blue-900/40 to-black',
-        borderColor: 'border-blue-500/50',
-        iconColor: 'text-blue-500',
-        badgeColor: 'bg-blue-500/20 text-blue-300',
-        icon: faCalendarCheck
+        label: 'Important, Not Urgent',
+        action: 'Lock in a time. These build your future.',
+        icon: faCalendarCheck,
+        accentColor: '#3b82f6',
+        bg: 'rgba(59,130,246,0.06)',
+        border: 'rgba(59,130,246,0.30)',
+        glow: 'rgba(59,130,246,0.15)',
     },
     {
         id: 'q3',
         title: 'DELEGATE',
-        subtitle: 'Urgent & Not Important',
-        desc: 'Interruptions, some calls/emails, popular activities.',
-        bgColor: 'bg-gradient-to-br from-yellow-900/40 to-black',
-        borderColor: 'border-yellow-500/50',
-        iconColor: 'text-yellow-500',
-        badgeColor: 'bg-yellow-500/20 text-yellow-300',
-        icon: faUserClock
+        label: 'Urgent, Not Important',
+        action: 'Hand it off. Your time is too valuable.',
+        icon: faUserClock,
+        accentColor: '#eab308',
+        bg: 'rgba(234,179,8,0.06)',
+        border: 'rgba(234,179,8,0.30)',
+        glow: 'rgba(234,179,8,0.15)',
     },
     {
         id: 'q4',
         title: 'ELIMINATE',
-        subtitle: 'Not Urgent & Not Important',
-        desc: 'Trivia, busy work, time wasters.',
-        bgColor: 'bg-gradient-to-br from-gray-800/40 to-black',
-        borderColor: 'border-gray-600/50',
-        iconColor: 'text-gray-400',
-        badgeColor: 'bg-gray-600/20 text-gray-300',
-        icon: faTrash
+        label: 'Not Urgent, Not Important',
+        action: 'Cut it. Dead weight. Move on.',
+        icon: faBan,
+        accentColor: '#6b7280',
+        bg: 'rgba(107,114,128,0.06)',
+        border: 'rgba(107,114,128,0.25)',
+        glow: 'rgba(107,114,128,0.10)',
     },
 ];
-
-import LoadingScreen from '../components/LoadingScreen';
 
 export default function Matrix() {
     const { matrixTasks, addMatrixTask, toggleMatrixTask, deleteMatrixTask } = useData();
     const [inputs, setInputs] = useState({ q1: '', q2: '', q3: '', q4: '' });
-    const [focusedQ, setFocusedQ] = useState(null);
+    const [collapsed, setCollapsed] = useState({ q1: false, q2: false, q3: false, q4: false });
+    const [revealedTaskId, setRevealedTaskId] = useState(null);
     const [localLoading, setLocalLoading] = useState(true);
+    const inputRefs = useRef({});
 
     React.useEffect(() => {
-        const timer = setTimeout(() => {
-            setLocalLoading(false);
-        }, 1200);
-        return () => clearTimeout(timer);
+        const t = setTimeout(() => setLocalLoading(false), 900);
+        return () => clearTimeout(t);
     }, []);
 
-    if (localLoading) {
-        return (
-            <div className="p-8">
-                <LoadingScreen fullPage={false} />
-            </div>
-        );
-    }
+    if (localLoading) return <div className="p-8"><LoadingScreen fullPage={false} /></div>;
 
-    const handleAdd = (quadrant) => {
-        if (inputs[quadrant].trim()) {
-            addMatrixTask(quadrant, inputs[quadrant].trim());
-            setInputs(prev => ({ ...prev, [quadrant]: '' }));
-        }
+    const getQ = (id) => (matrixTasks || []).filter(t => t.quadrant === id);
+
+    const handleAdd = (id) => {
+        const val = inputs[id].trim();
+        if (!val) return;
+        addMatrixTask(id, val);
+        setInputs(p => ({ ...p, [id]: '' }));
+        inputRefs.current[id]?.focus();
     };
 
-    const handleKeyPress = (e, quadrant) => {
-        if (e.key === 'Enter') handleAdd(quadrant);
+    const handleKey = (e, id) => {
+        if (e.key === 'Enter') handleAdd(id);
     };
 
-    const getTasksForQuadrant = (quadrant) => {
-        return (matrixTasks || []).filter(t => t.quadrant === quadrant);
-    };
+    const toggleCollapse = (id) => setCollapsed(p => ({ ...p, [id]: !p[id] }));
 
     return (
-        <div className="space-y-6 h-full flex flex-col">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 shrink-0">
+        <div className="space-y-6">
+            {/* Header */}
+            <div className="flex items-end justify-between">
                 <div>
-                    <h2 className="header-font text-3xl text-white">Eisenhower Matrix</h2>
-                    <p className="text-gray-400 text-sm max-w-xl">
-                        Prioritize tasks by urgency and importance. Focus on what matters, simple.
+                    <p className="text-[11px] uppercase tracking-[0.3em] text-gray-500 mb-1">Eisenhower</p>
+                    <h1 className="header-font text-4xl text-white tracking-wide leading-none">PRIORITY MATRIX</h1>
+                    <p className="text-gray-500 text-sm mt-1">
+                        Every task has a place. Know yours.
                     </p>
+                </div>
+                <div className="text-right hidden md:block">
+                    <p className="text-2xl font-black text-white">{(matrixTasks || []).filter(t => t.done).length}</p>
+                    <p className="text-[11px] uppercase tracking-widest text-gray-500">Completed</p>
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-6 flex-1 min-h-0">
-                {quadrants.map(q => {
-                    const tasks = getTasksForQuadrant(q.id);
-                    const completedCount = tasks.filter(t => t.done).length;
+            {/* 2x2 Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {QUADRANTS.map((q, idx) => {
+                    const tasks = getQ(q.id);
+                    const done = tasks.filter(t => t.done).length;
+                    const isCollapsed = collapsed[q.id];
 
                     return (
-                        <div
+                        <motion.div
                             key={q.id}
-                            className={`tile relative rounded-2xl border ${q.borderColor} ${q.bgColor} flex flex-col shadow-lg transition-all duration-300 hover:shadow-black/50 overflow-hidden group`}
-                            onMouseEnter={() => setFocusedQ(q.id)}
-                            onMouseLeave={() => setFocusedQ(null)}
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: idx * 0.08 }}
+                            className="rounded-2xl overflow-hidden flex flex-col"
+                            style={{
+                                background: q.bg,
+                                border: `1px solid ${q.border}`,
+                                boxShadow: `0 4px 24px ${q.glow}`,
+                            }}
                         >
-                            {/* Header */}
-                            <div className="p-5 border-b border-white/5 flex items-start justify-between bg-black/20 backdrop-blur-sm">
-                                <div>
-                                    <div className="flex items-center gap-3 mb-1">
-                                        <div className={`p-2 rounded-lg ${q.badgeColor}`}>
-                                            <FontAwesomeIcon icon={q.icon} className="text-lg" />
-                                        </div>
-                                        <h3 className="header-font text-xl text-white tracking-wide">{q.title}</h3>
-                                    </div>
-                                    <p className="text-xs text-gray-400 leading-snug ml-1">{q.subtitle}</p>
-                                </div>
-                                <span className={`text-xs font-bold px-2 py-1 rounded-full border border-white/10 ${completedCount === tasks.length && tasks.length > 0 ? 'bg-green-500/20 text-green-400' : 'bg-black/40 text-gray-400'}`}>
-                                    {completedCount}/{tasks.length}
-                                </span>
-                            </div>
-
-                            {/* Task List */}
-                            <div className="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-2">
-                                {tasks.length === 0 ? (
-                                    <div className="h-full flex flex-col items-center justify-center opacity-30 text-center p-4">
-                                        <FontAwesomeIcon icon={q.icon} className={`text-4xl mb-3 ${q.iconColor}`} />
-                                        <p className="text-sm font-medium text-white">{q.desc}</p>
-                                    </div>
-                                ) : (
-                                    tasks.map(task => (
-                                        <div
-                                            key={task.id}
-                                            className={`group/item flex items-start gap-3 p-3 rounded-xl border transition-all ${task.done
-                                                    ? 'bg-black/20 border-transparent opacity-50'
-                                                    : 'bg-white/5 border-white/5 hover:bg-white/10 hover:border-white/10'
-                                                }`}
-                                        >
-                                            <button
-                                                onClick={() => toggleMatrixTask(task.id, !task.done)}
-                                                className={`mt-0.5 w-5 h-5 rounded-full border flex items-center justify-center transition-all ${task.done
-                                                        ? 'bg-green-500 border-green-500 text-white'
-                                                        : 'border-gray-500 hover:border-white text-transparent'
-                                                    }`}
-                                            >
-                                                <FontAwesomeIcon icon={faCheck} className="text-xs" />
-                                            </button>
-
-                                            <span className={`flex-1 text-sm leading-relaxed break-words ${task.done ? 'line-through' : 'text-gray-200'}`}>
-                                                {task.text}
-                                            </span>
-
-                                            <button
-                                                onClick={() => deleteMatrixTask(task.id)}
-                                                className="opacity-0 group-hover/item:opacity-100 text-gray-500 hover:text-red-400 p-1 transition-all"
-                                                title="Delete"
-                                            >
-                                                <FontAwesomeIcon icon={faXmark} />
-                                            </button>
-                                        </div>
-                                    ))
-                                )}
-                            </div>
-
-                            {/* Input Area (Bottom pinned) */}
-                            <div className="p-4 bg-black/30 border-t border-white/5">
-                                <div className="relative group/input">
-                                    <input
-                                        type="text"
-                                        value={inputs[q.id]}
-                                        onChange={(e) => setInputs(prev => ({ ...prev, [q.id]: e.target.value }))}
-                                        onKeyPress={(e) => handleKeyPress(e, q.id)}
-                                        placeholder="Add task..."
-                                        className="w-full bg-white/5 border border-white/10 text-white text-sm rounded-xl py-3 pl-4 pr-12 focus:outline-none focus:bg-white/10 focus:border-white/20 transition-all placeholder-gray-500"
-                                    />
-                                    <button
-                                        onClick={() => handleAdd(q.id)}
-                                        disabled={!inputs[q.id].trim()}
-                                        className={`absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-lg transition-all ${inputs[q.id].trim()
-                                                ? `${q.badgeColor} hover:bg-white/20`
-                                                : 'text-gray-600 cursor-not-allowed'
-                                            }`}
+                            {/* Quadrant Header */}
+                            <button
+                                onClick={() => toggleCollapse(q.id)}
+                                className="w-full flex items-center justify-between px-5 py-4 transition-colors hover:bg-white/5"
+                            >
+                                <div className="flex items-center gap-3">
+                                    <div
+                                        className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
+                                        style={{ background: `${q.accentColor}20`, border: `1px solid ${q.accentColor}40` }}
                                     >
-                                        <FontAwesomeIcon icon={faPlus} />
-                                    </button>
+                                        <FontAwesomeIcon icon={q.icon} style={{ color: q.accentColor }} className="text-base" />
+                                    </div>
+                                    <div className="text-left">
+                                        <p className="header-font text-lg text-white tracking-wider leading-none">{q.title}</p>
+                                        <p className="text-[11px] text-gray-500 mt-0.5">{q.label}</p>
+                                    </div>
                                 </div>
-                            </div>
-                        </div>
+                                <div className="flex items-center gap-3">
+                                    {tasks.length > 0 && (
+                                        <span
+                                            className="text-xs font-bold px-2 py-0.5 rounded-full"
+                                            style={{
+                                                background: done === tasks.length ? 'rgba(34,197,94,0.15)' : `${q.accentColor}15`,
+                                                color: done === tasks.length ? '#4ade80' : q.accentColor,
+                                            }}
+                                        >
+                                            {done}/{tasks.length}
+                                        </span>
+                                    )}
+                                    <FontAwesomeIcon
+                                        icon={isCollapsed ? faChevronDown : faChevronUp}
+                                        className="text-gray-600 text-xs"
+                                    />
+                                </div>
+                            </button>
+
+                            <AnimatePresence initial={false}>
+                                {!isCollapsed && (
+                                    <motion.div
+                                        initial={{ height: 0, opacity: 0 }}
+                                        animate={{ height: 'auto', opacity: 1 }}
+                                        exit={{ height: 0, opacity: 0 }}
+                                        transition={{ duration: 0.2 }}
+                                        className="overflow-hidden"
+                                    >
+                                        {/* Divider */}
+                                        <div className="mx-5 border-t" style={{ borderColor: q.border }} />
+
+                                        {/* Hint text */}
+                                        <p className="px-5 pt-3 pb-2 text-[11px] italic text-gray-600">{q.action}</p>
+
+                                        {/* Task List */}
+                                        <div className="px-5 space-y-1.5 max-h-56 overflow-y-auto custom-scrollbar pb-1">
+                                            <AnimatePresence>
+                                                {tasks.length === 0 ? (
+                                                    <p className="text-center text-gray-700 text-sm py-4">No tasks yet. Add one below.</p>
+                                                ) : (
+                                                    tasks.map(task => (
+                                                        <motion.div
+                                                            key={task.id}
+                                                            initial={{ opacity: 0, x: -10 }}
+                                                            animate={{ opacity: task.done ? 0.45 : 1, x: 0 }}
+                                                            exit={{ opacity: 0, x: 10 }}
+                                                            className="group flex items-center gap-3 py-2 px-3 rounded-xl transition-colors hover:bg-white/5"
+                                                            onContextMenu={(e) => { e.preventDefault(); setRevealedTaskId(revealedTaskId === task.id ? null : task.id); }}
+                                                        >
+                                                            {/* Checkbox */}
+                                                            <button
+                                                                onClick={() => toggleMatrixTask(task.id, !task.done)}
+                                                                className="w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-all"
+                                                                style={{
+                                                                    borderColor: task.done ? '#22c55e' : q.accentColor,
+                                                                    background: task.done ? '#22c55e' : 'transparent',
+                                                                }}
+                                                            >
+                                                                {task.done && <FontAwesomeIcon icon={faCheck} className="text-white text-[9px]" />}
+                                                            </button>
+
+                                                            {/* Text */}
+                                                            <span
+                                                                className={`flex-1 text-sm leading-relaxed ${task.done ? 'line-through text-gray-600' : 'text-gray-200'}`}
+                                                            >
+                                                                {task.text}
+                                                            </span>
+
+                                                            {/* Delete */}
+                                                            <button
+                                                                onClick={() => deleteMatrixTask(task.id)}
+                                                                className={`transition-all p-1 rounded text-gray-600 hover:text-red-400 ${revealedTaskId === task.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}
+                                                            >
+                                                                <FontAwesomeIcon icon={faTrash} className="text-xs" />
+                                                            </button>
+                                                        </motion.div>
+                                                    ))
+                                                )}
+                                            </AnimatePresence>
+                                        </div>
+
+                                        {/* Input */}
+                                        <div className="px-5 pb-5 pt-3">
+                                            <div className="flex gap-2">
+                                                <input
+                                                    ref={el => inputRefs.current[q.id] = el}
+                                                    type="text"
+                                                    value={inputs[q.id]}
+                                                    onChange={e => setInputs(p => ({ ...p, [q.id]: e.target.value }))}
+                                                    onKeyDown={e => handleKey(e, q.id)}
+                                                    placeholder="Type task, press Enter..."
+                                                    className="flex-1 bg-black/30 border border-white/10 text-white text-sm rounded-xl px-4 py-2.5 focus:outline-none focus:border-white/25 placeholder-gray-600 transition-colors"
+                                                />
+                                                <button
+                                                    onClick={() => handleAdd(q.id)}
+                                                    disabled={!inputs[q.id].trim()}
+                                                    className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-all"
+                                                    style={{
+                                                        background: inputs[q.id].trim() ? `${q.accentColor}25` : 'rgba(255,255,255,0.04)',
+                                                        border: `1px solid ${inputs[q.id].trim() ? q.accentColor + '60' : 'rgba(255,255,255,0.08)'}`,
+                                                        color: inputs[q.id].trim() ? q.accentColor : '#4b5563',
+                                                        cursor: inputs[q.id].trim() ? 'pointer' : 'not-allowed',
+                                                    }}
+                                                >
+                                                    <FontAwesomeIcon icon={faPlus} />
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
+                        </motion.div>
                     );
                 })}
             </div>

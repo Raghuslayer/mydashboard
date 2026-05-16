@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { useData } from '../contexts/DataProvider';
 import Modal from '../components/Modal';
 import { getTaskBreakdown } from '../services/gemini';
@@ -8,6 +8,7 @@ import {
     faTrash, faArrowRight, faCalendarCheck, faCalendarDays, faTrophy,
     faExclamationTriangle, faChevronDown, faChevronUp
 } from '@fortawesome/free-solid-svg-icons';
+import { useLongPress } from '../hooks/useLongPress';
 import {
     Chart as ChartJS,
     CategoryScale,
@@ -27,7 +28,8 @@ export default function Tasks() {
     const { dailyTasks, addDailyTask, toggleDailyTask, clearCompletedDailyTasks, deleteDailyTask, dailyTaskHistory } = useData();
     const [newTask, setNewTask] = useState('');
     const [showAnalytics, setShowAnalytics] = useState(false);
-    const [selectedMonth, setSelectedMonth] = useState(null); // null = current 30 days
+    const [selectedMonth, setSelectedMonth] = useState(null);
+    const [revealedTaskId, setRevealedTaskId] = useState(null);
 
     // AI Breakdown State
     const [isBreakdownModalOpen, setIsBreakdownModalOpen] = useState(false);
@@ -257,16 +259,21 @@ export default function Tasks() {
                         </div>
                     ) : (
                         dailyTasks.map((task) => {
-                            // Calculate task age
                             const createdDate = new Date(task.createdAt);
                             const today = new Date();
                             today.setHours(0, 0, 0, 0);
                             createdDate.setHours(0, 0, 0, 0);
                             const daysOld = Math.floor((today - createdDate) / (1000 * 60 * 60 * 24));
                             const isOld = daysOld > 0;
+                            const isRevealed = revealedTaskId === task.id;
 
                             return (
-                                <div key={task.id} className={`group flex items-center gap-3 p-3 rounded-xl border transition-all ${task.done ? 'bg-green-900/20 border-green-500/20' : 'bg-white/5 border-white/10 hover:bg-white/10'}`}>
+                                <div
+                                    key={task.id}
+                                    className={`group flex items-center gap-3 p-3 rounded-xl border transition-all ${task.done ? 'bg-green-900/20 border-green-500/20' : 'bg-white/5 border-white/10 hover:bg-white/10'}`}
+                                    onContextMenu={(e) => { e.preventDefault(); setRevealedTaskId(isRevealed ? null : task.id); }}
+                                    onTouchStart={() => { }}
+                                >
                                     <label className="flex items-center gap-3 flex-1 cursor-pointer">
                                         <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${task.done ? 'bg-green-500 border-green-500' : 'border-gray-500'}`}>
                                             <input type="checkbox" checked={task.done} onChange={(e) => toggleDailyTask(task.id, e.target.checked)} className="sr-only" />
@@ -281,7 +288,7 @@ export default function Tasks() {
                                             )}
                                         </div>
                                     </label>
-                                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <div className={`flex gap-1 transition-opacity ${isRevealed ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
                                         {!task.done && <button onClick={() => handleMagicWand(task)} className="text-indigo-400 hover:text-indigo-300 p-2" title="AI breakdown"><FontAwesomeIcon icon={faWandMagicSparkles} /></button>}
                                         <button onClick={() => handleDelete(task.id)} className="text-red-400 hover:text-red-300 p-2" title="Delete"><FontAwesomeIcon icon={faTrash} /></button>
                                     </div>

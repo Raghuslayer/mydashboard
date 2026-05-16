@@ -8,6 +8,7 @@ export default function SemesterGoals() {
     const { semesterGoals, addSemesterGoal, updateSemesterGoal, deleteSemesterGoal } = useData();
     const [isAdding, setIsAdding] = useState(false);
     const [editingId, setEditingId] = useState(null);
+    const [revealedGoalId, setRevealedGoalId] = useState(null);
 
     // Form States
     const [formData, setFormData] = useState({ title: '', description: '', contextItems: '' });
@@ -89,7 +90,9 @@ export default function SemesterGoals() {
                     </div>
                 ) : (
                     semesterGoals.map(goal => (
-                        <div key={goal.id} className="glass-panel group relative overflow-hidden flex flex-col h-full hover:border-fire-orange/30 transition-all duration-300">
+                        <div key={goal.id} className="glass-panel group relative overflow-hidden flex flex-col h-full hover:border-fire-orange/30 transition-all duration-300"
+                             onContextMenu={(e) => { e.preventDefault(); setRevealedGoalId(revealedGoalId === goal.id ? null : goal.id); }}
+                        >
 
                             {/* Decorative Top Bar */}
                             <div className="h-1 bg-gradient-to-r from-fire-orange to-fire-yellow w-full absolute top-0 left-0" />
@@ -97,7 +100,7 @@ export default function SemesterGoals() {
                             <div className="p-6 flex-grow">
                                 <div className="flex justify-between items-start mb-4">
                                     <h3 className="header-font text-2xl text-white">{goal.title}</h3>
-                                    <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <div className={`flex gap-2 transition-opacity ${revealedGoalId === goal.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
                                         <button
                                             onClick={() => handleEdit(goal)}
                                             className="text-gray-400 hover:text-white p-2"

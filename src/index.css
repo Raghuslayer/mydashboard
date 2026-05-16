@@ -86,11 +86,24 @@
     -webkit-text-size-adjust: 100%;
     -webkit-overflow-scrolling: touch;
     perspective: 1500px;
+    /* Disable text selection globally */
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
   }
   
   * {
     transform-style: preserve-3d;
+    -webkit-tap-highlight-color: transparent;
   }
+
+  /* Allow text selection only in inputs and textareas */
+  input, textarea {
+    user-select: text;
+    -webkit-user-select: text;
+    -webkit-touch-callout: default;
+  }
+
 }
 
 @layer components {
