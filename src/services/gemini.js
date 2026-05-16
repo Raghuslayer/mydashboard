@@ -266,7 +266,7 @@ export async function getStoicQuote() {
  * Goggins push notification — dynamic, time-relevant, cached per hour slot
  */
 export async function getGogginsPushMessage(context) {
-    const { timeOfDay, tasksCompleted, tasksTotal, taskNames = [] } = context;
+    const { timeOfDay, tasksCompleted, tasksTotal, taskNames = [], behaviorContext = '' } = context;
     const tasksLeft = tasksTotal - tasksCompleted;
     const pct = tasksTotal > 0 ? Math.round((tasksCompleted / tasksTotal) * 100) : 0;
 
@@ -290,7 +290,8 @@ export async function getGogginsPushMessage(context) {
 ${timeCtx}
 Tasks done: ${tasksCompleted}/${tasksTotal} (${pct}%)
 ${tasksLeft > 0 ? `Still remaining: ${taskList}` : 'ALL TASKS COMPLETED'}
-Rules: Sound exactly like Goggins. Raw, masculine, no fluff. Reference the numbers. End with "Stay Hard."
+${behaviorContext ? `\nCRITICAL CONTEXT: ${behaviorContext}` : ''}
+Rules: Sound exactly like Goggins. Raw, masculine, no fluff. Reference the numbers or the context above. End with "Stay Hard."
 Return ONLY the notification text.`;
 
     try {
