@@ -20,6 +20,7 @@ const NOTIFICATION_SCHEDULE = [
     { hour: 18, minute: 0  },  // 6:00 PM  - evening check-in
     { hour: 20, minute: 30 },  // 8:30 PM  - night push
     { hour: 22, minute: 0  },  // 10:00 PM - final accountability
+    { hour: 23, minute: 30 },  // 11:30 PM - journal and sleep reminder
 ];
 
 // ─── Permission ─────────────────────────────────────────────────────────────
@@ -63,7 +64,12 @@ async function fireNotification(message, title = "⚡ WARRIOR DASHBOARD") {
 }
 
 // ─── Build and send a dynamic notification ───────────────────────────────────
-export async function sendDynamicNotification(tasksCompleted, tasksTotal, taskNames = [], behaviorContext = '') {
+export async function sendDynamicNotification(tasksCompleted, tasksTotal, taskNames = [], behaviorContext = '', localMessageOverride = '') {
+    if (localMessageOverride) {
+        await fireNotification(localMessageOverride);
+        return localMessageOverride;
+    }
+
     const timeOfDay = getTimeOfDay();
     const context = { timeOfDay, tasksCompleted, tasksTotal, taskNames, behaviorContext };
 
@@ -90,7 +96,19 @@ let _milestonesHit = new Set(); // store milestones for the current session
 export function startNotificationScheduler(getTaskStats) {
     stopNotificationScheduler(); // ensure no duplicates
 
+    // Check for long absence upon init
+    const lastCheckStr = localStorage.getItem('notif_last_check');
+    if (lastCheckStr) {
+        const hoursAway = (Date.now() - parseInt(lastCheckStr, 10)) / (1000 * 60 * 60);
+        if (hoursAway > 12) {
+            // Autonomous local reminder to save API calls
+            sendDynamicNotification(0, 0, [], '', "You've been gone for a while. The world didn't stop, and neither should you. Open your dashboard and get back to work. Stay Hard.");
+        }
+    }
+
     const check = async () => {
+        localStorage.setItem('notif_last_check', Date.now().toString());
+
         const now = new Date();
         const hour = now.getHours();
         const minute = now.getMinutes();
@@ -159,7 +177,19 @@ export function startNotificationScheduler(getTaskStats) {
         // 3. Fire Notification
         if (fireTime || fireBehavior) {
             if (fireTime) localStorage.setItem('notif_last_slot', slotKey);
-            await sendDynamicNotification(stats.completed, stats.total, stats.taskNames, behaviorContext);
+
+            let localOverride = '';
+            
+            // Late night journal reminder (Autonomous, local to save API limit)
+            if (fireTime && hour === 23 && minute === 30) {
+                localOverride = "It's almost midnight. Write your journal, plan tomorrow's war, and go to sleep. Don't waste the night. Stay Hard.";
+            } 
+            // Inactivity fallback (save API)
+            else if (fireBehavior && behaviorContext.includes('inactive for 3+ hours')) {
+                localOverride = "You've been slacking for 3 hours. Time is ticking. Get back to your tasks right now. Stay Hard.";
+            }
+
+            await sendDynamicNotification(stats.completed, stats.total, stats.taskNames, behaviorContext, localOverride);
         }
     };
 
