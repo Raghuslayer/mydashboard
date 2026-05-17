@@ -122,29 +122,35 @@ export default function Analytics() {
         return weeks;
     }, [historyData, timeRange]);
 
-    // Calculate month labels based on heatmap data
+    // Calculate month labels with exact week-column spans for perfect alignment
     const monthLabels = useMemo(() => {
         if (heatmapData.length === 0) return [];
 
-        const firstDate = new Date(heatmapData[0][0].date);
-        const lastDate = new Date(heatmapData[heatmapData.length - 1][heatmapData[heatmapData.length - 1].length - 1].date);
-
-        const months = [];
-        let currentMonth = firstDate.getMonth();
-        let currentYear = firstDate.getFullYear();
-
         const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
-        for (let d = new Date(firstDate); d <= lastDate; d.setDate(d.getDate() + 1)) {
-            if (d.getMonth() !== currentMonth || d.getFullYear() !== currentYear) {
-                months.push(monthNames[currentMonth]);
-                currentMonth = d.getMonth();
-                currentYear = d.getFullYear();
-            }
-        }
-        months.push(monthNames[currentMonth]);
+        // Walk through each week-column and tally how many columns each month owns
+        const monthSpans = [];
+        let currentLabel = null;
+        let currentCount = 0;
 
-        return months;
+        heatmapData.forEach((week) => {
+            // Identify the month of the first day in this week
+            const monthKey = monthNames[new Date(week[0].date).getMonth()];
+            if (monthKey !== currentLabel) {
+                if (currentLabel !== null) {
+                    monthSpans.push({ label: currentLabel, cols: currentCount });
+                }
+                currentLabel = monthKey;
+                currentCount = 1;
+            } else {
+                currentCount++;
+            }
+        });
+        if (currentLabel !== null) {
+            monthSpans.push({ label: currentLabel, cols: currentCount });
+        }
+
+        return monthSpans;
     }, [heatmapData]);
 
     // Get intensity color
@@ -289,28 +295,32 @@ export default function Analytics() {
 
                 <div className="overflow-x-auto pb-4">
                     <div className="inline-block min-w-full">
-                        {/* Month labels - dynamically generated */}
-                        <div className="flex gap-0.5 mb-3">
-                            <div className="w-12"></div>
-                            {monthLabels.map((month, idx) => (
-                                <div key={idx} className="flex-1 text-xs text-gray-500 text-center font-semibold">
-                                    {month}
+                        {/* Month labels - each label width = cols * (cell 20px + gap 2px) */}
+                        <div className="flex gap-0 mb-1">
+                            <div className="w-12 shrink-0"></div>
+                            {monthLabels.map((item, idx) => (
+                                <div
+                                    key={idx}
+                                    className="text-xs text-gray-500 text-left font-semibold overflow-hidden"
+                                    style={{ width: `${item.cols * 22}px`, minWidth: 0 }}
+                                >
+                                    {item.label}
                                 </div>
                             ))}
                         </div>
 
-                        {/* Heatmap grid */}
-                        <div className="flex gap-0.5">
-                            {/* Day labels - properly aligned */}
-                            <div className="flex flex-col gap-0.5 w-12">
+                        {/* Heatmap grid — cell=20px, gap=2px → each col = 22px */}
+                        <div className="flex gap-0">
+                            {/* Day labels */}
+                            <div className="flex flex-col gap-0.5 w-12 shrink-0 mr-0">
                                 {['Mon', '', 'Wed', '', 'Fri', '', 'Sun'].map((day, idx) => (
-                                    <div key={idx} className="h-5 flex items-center justify-center text-xs text-gray-600 font-medium">
+                                    <div key={idx} className="h-5 flex items-center justify-end pr-1 text-xs text-gray-600 font-medium">
                                         {day}
                                     </div>
                                 ))}
                             </div>
 
-                            {/* Weeks */}
+                            {/* Weeks — rendered with explicit gap so cols = 22px each */}
                             <div className="flex gap-0.5">
                                 {heatmapData.map((week, weekIdx) => (
                                     <div key={weekIdx} className="flex flex-col gap-0.5">
